@@ -39,3 +39,6 @@ Thumbs.db
 # Build artifacts
 build/
 dist/
+
+# Others
+google_oauth_client

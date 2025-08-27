@@ -8,25 +8,10 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
+      - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf
     depends_on:
       - backend-node
       - backend-python
-    command: "/bin/sh -c 'while :; do sleep 6h & wait $!; nginx -s reload; done & nginx -g \"daemon off;\"'" # Keep Nginx running and reload for certs
-    networks:
-      - my-research-digest-network
-
-  certbot:
-    image: certbot/certbot
-    container_name: my-research-digest-certbot
-    volumes:
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
-    depends_on:
-      - nginx
-    command: "certonly --webroot -w /var/www/certbot --force-renewal --email contact@my-research-digest.com --agree-tos --no-eff-email -d my-research-digest.com -d www.my-research-digest.com"
     networks:
       - my-research-digest-network
 
@@ -36,7 +21,7 @@ services:
       dockerfile: Dockerfile
     container_name: my-research-digest-backend-node
     env_file:
-      - ./backend-node/prod.env
+      - ./.development.env
     depends_on:
       - mongodb
     ports:
@@ -50,7 +35,7 @@ services:
       dockerfile: Dockerfile
     container_name: my-research-digest-backend-python
     env_file:
-      - ./backend-python/prod.env
+      - ./.development.env
     networks:
       - my-research-digest-network
 
