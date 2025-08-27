@@ -13,7 +13,7 @@ import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-route
 import { Footer } from "./components/Footer";
 
 interface User {
-  _id?: string; // MongoDB user ID
+  _id: string; // MongoDB user ID
   sub?: string; // Auth0 user ID
   name?: string;
   email?: string;
@@ -28,7 +28,7 @@ function AppContent() {
     const syncUser = async () => {
       if (isAuthenticated && user) {
         try {
-          const response = await axios.post("http://localhost:5000/api/users/sync", {
+          const response = await axios.post(`${import.meta.env.VITE_MONGO_API_URL}/api/users/sync`, {
             auth0Id: user.sub,
             email: user.email,
             name: user.name,
