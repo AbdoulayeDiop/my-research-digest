@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   nginx:
     image: nginx:latest
@@ -36,7 +34,7 @@ services:
       dockerfile: Dockerfile
     container_name: my-research-digest-backend-node
     env_file:
-      - ./backend-node/prod.env
+      - ./.production.env
     depends_on:
       - mongodb
     ports:
@@ -50,7 +48,7 @@ services:
       dockerfile: Dockerfile
     container_name: my-research-digest-backend-python
     env_file:
-      - ./backend-python/prod.env
+      - ./.production.env
     networks:
       - my-research-digest-network
 
