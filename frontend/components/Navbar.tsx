@@ -24,17 +24,20 @@ import {
 import axios from "axios";
 
 interface User {
-  id: string;
-  name: string;
-  email: string;
+  _id: string; // MongoDB user ID
+  sub?: string;
+  name?: string;
+  email?: string;
 }
 
 interface NavbarProps {
   user: User | null;
+  onGetStarted: () => void;
+  onSignIn: () => void;
   onSignOut: () => void;
 }
 
-export function Navbar({ user, onSignOut }: NavbarProps) {
+export function Navbar({ onGetStarted, onSignIn, onSignOut, user }: NavbarProps) {
   const navigate = useNavigate();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -49,9 +52,9 @@ export function Navbar({ user, onSignOut }: NavbarProps) {
   }, [user?.email]);
 
   const handleDeleteAccount = async () => {
-    if (!user?.id) return;
+    if (!user?._id) return;
     try {
-      await axios.delete(`${import.meta.env.VITE_MONGO_API_URL}/api/users/${user.id}`);
+      await axios.delete(`${import.meta.env.VITE_MONGO_API_URL}/api/users/${user._id}`);
       onSignOut(); // Log out user after successful deletion
     } catch (error) {
       console.error("Error deleting account:", error);
@@ -82,7 +85,7 @@ export function Navbar({ user, onSignOut }: NavbarProps) {
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                   <Avatar className="h-10 w-10">
                     <AvatarFallback>
-                      {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                      {user?.name? user.name.split(' ').map(n => n[0]).join('').toUpperCase(): <User className="h-6 w-6" />}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -135,8 +138,8 @@ export function Navbar({ user, onSignOut }: NavbarProps) {
             </DropdownMenu>
           ) : (
             <div className="flex items-center gap-2">
-              <Button variant="ghost">Sign In</Button>
-              <Button>Sign Up</Button>
+              <Button variant="ghost" onClick={onSignIn}>Sign In</Button>
+              <Button onClick={onGetStarted}>Sign Up</Button>
             </div>
           )}
         </div>

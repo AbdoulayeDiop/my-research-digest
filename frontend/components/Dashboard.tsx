@@ -16,9 +16,10 @@ interface Newsletter {
 }
 
 interface User {
-  sub: string;
-  name: string;
-  email: string;
+  _id: string; // MongoDB user ID
+  sub?: string;
+  name?: string;
+  email?: string;
 }
 
 interface DashboardProps {
@@ -49,7 +50,8 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
 
   useEffect(() => {
     if (user?.sub) {
-      console.log("Fetching newsletters for user:", user.name);
+      // console.log("User", user);
+      // console.log("Fetching newsletters for user:", user.name);
       fetchNewsletters();
     }
   }, [user?.sub]);
@@ -86,14 +88,14 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
     <div className="container mx-auto p-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="mb-2">Welcome back, {user.name.split(' ')[0]}!</h1>
+        {user?.name? <h1 className="mb-2">Welcome back, {user.name.split(' ')[0]}!</h1>: <h1 className="mb-2">Welcome to My Research Digest</h1>}
         <p className="text-muted-foreground">
           Manage your AI-powered scientific newsletters
         </p>
       </div>
 
       {/* Actions Bar */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-8">
+      {newsletters.length > 0 && (<div className="flex flex-col sm:flex-row gap-4 mb-8">
         {/* Search Bar */}
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -107,7 +109,7 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
         
         {/* Create Newsletter Button */}
         <AddNewsletterDialog onCreate={handleCreateNewsletter} user={user} />
-      </div>
+      </div>)}
 
       {/* Newsletter Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
@@ -118,7 +120,7 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
         <div className="bg-card rounded-lg p-4 border">
           <h3>Total Issues</h3>
           <p className="text-muted-foreground mt-1">
-            {newsletters.reduce((sum, n) => sum + n.totalIssues, 0)}
+            {newsletters.reduce((sum, n) => sum + (n.totalIssues || 0), 0)}
           </p>
         </div>
         <div className="bg-card rounded-lg p-4 border">

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Navbar } from "./components/Navbar";
 import { Dashboard } from "./components/Dashboard";
 import { IssuesList } from "./components/IssuesList";
@@ -6,14 +6,14 @@ import { IssueDetail } from "./components/IssueDetail";
 import { AdminDashboard } from "./components/AdminDashboard";
 import { LandingPage } from "./components/LandingPage";
 import { PrivacyPolicy } from "./components/PrivacyPolicy";
-import { AuthenticatedLayout } from "./components/AuthenticatedLayout";
 import { TermsOfService } from "./components/TermsOfService";
-import { LegalLayout } from "./components/LegalLayout";
 import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
 import axios from "axios";
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { Footer } from "./components/Footer";
 
 interface User {
+  _id?: string; // MongoDB user ID
   sub?: string; // Auth0 user ID
   name?: string;
   email?: string;
@@ -21,17 +21,20 @@ interface User {
 
 function AppContent() {
   const { isLoading, isAuthenticated, user, loginWithRedirect, logout } = useAuth0();
+  const [ syncedUser, setSyncedUser ] = useState<User | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const syncUser = async () => {
       if (isAuthenticated && user) {
         try {
-          await axios.post("http://localhost:5000/api/users/sync", {
+          const response = await axios.post("http://localhost:5000/api/users/sync", {
             auth0Id: user.sub,
             email: user.email,
             name: user.name,
           });
+          setSyncedUser({...user, _id: response.data._id});
+          console.log("User synced:", syncedUser);
         } catch (error) {
           console.error("Error syncing user:", error);
         }
@@ -68,14 +71,20 @@ function AppContent() {
   }
 
   return (
-      <Routes>
-        <Route path="/" element={isAuthenticated ? <AuthenticatedLayout user={user as User} onSignOut={() => logout({ logoutParams: { returnTo: window.location.origin } })} onNavigateToAdmin={() => {}}><Dashboard user={user as User} onViewNewsletter={handleViewNewsletter} isAuthenticated={isAuthenticated} /></AuthenticatedLayout> : <LandingPage onGetStarted={loginWithRedirect} onSignIn={loginWithRedirect} isAuthenticated={isAuthenticated} />} />
-        <Route path="/newsletters/:newsletterId" element={<AuthenticatedLayout user={user as User} onSignOut={() => logout({ logoutParams: { returnTo: window.location.origin } })} onNavigateToAdmin={() => {}}><IssuesList onBack={handleBackToNewsletters} onViewIssue={handleViewIssue} /></AuthenticatedLayout>} />
-        <Route path="/issues/:issueId" element={<AuthenticatedLayout user={user as User} onSignOut={() => logout({ logoutParams: { returnTo: window.location.origin } })} onNavigateToAdmin={() => {}}><IssueDetail onBack={handleBackToIssues} /></AuthenticatedLayout>} />
-        <Route path="/privacy" element={<LegalLayout isAuthenticated={isAuthenticated} user={user as User}><PrivacyPolicy /></LegalLayout>} />
-        <Route path="/terms" element={<LegalLayout isAuthenticated={isAuthenticated} user={user as User}><TermsOfService /></LegalLayout>} />
-        <Route path="/admin" element={<AuthenticatedLayout user={user as User} onSignOut={() => logout({ logoutParams: { returnTo: window.location.origin } })} onNavigateToAdmin={() => {}}><AdminDashboard onBack={() => navigate('/')} /></AuthenticatedLayout>} />
-      </Routes>
+    <div className="min-h-screen bg-background">
+      <Navbar user={syncedUser as User} onSignOut={() => logout({ logoutParams: { returnTo: window.location.origin } })} onSignIn={loginWithRedirect} onGetStarted={loginWithRedirect} />
+      <main>
+        <Routes>
+          <Route path="/" element={isAuthenticated ? <Dashboard user={syncedUser as User} onViewNewsletter={handleViewNewsletter} /> : <LandingPage onGetStarted={loginWithRedirect} onSignIn={loginWithRedirect} isAuthenticated={isAuthenticated} />} />
+          <Route path="/newsletters/:newsletterId" element={<IssuesList onBack={handleBackToNewsletters} onViewIssue={handleViewIssue} />} />
+          <Route path="/issues/:issueId" element={<IssueDetail onBack={handleBackToIssues} />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/admin" element={<AdminDashboard onBack={() => navigate('/')} />} />
+        </Routes>
+      </main>
+      <Footer isAuthenticated={isAuthenticated} />
+    </div>
   );
 }
 

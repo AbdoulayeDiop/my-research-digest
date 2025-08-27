@@ -51,7 +51,7 @@ export function NewsletterCard({ newsletter, onDelete, onView }: NewsletterCardP
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <CardTitle className="line-clamp-1 group-hover:text-primary transition-colors">
+            <CardTitle className="font-medium line-clamp-1 group-hover:text-primary transition-colors">
               {newsletter.topic}
             </CardTitle>
             {newsletter.description && (
@@ -59,6 +59,9 @@ export function NewsletterCard({ newsletter, onDelete, onView }: NewsletterCardP
                 {newsletter.description}
               </CardDescription>
             )}
+            <span className="text-sm text-muted-foreground mt-2">
+              Created: {formattedCreatedAt}
+            </span>
           </div>
         </div>
       </CardHeader>
@@ -75,7 +78,7 @@ export function NewsletterCard({ newsletter, onDelete, onView }: NewsletterCardP
         
         <div className="flex items-center gap-2 text-muted-foreground">
           <BookOpen className="w-4 h-4" />
-          <span>{newsletter.totalIssues} issues published</span>
+          <span>{newsletter.totalIssues || 0} issues published</span>
         </div>
         
         <div className="flex items-center gap-2 text-muted-foreground">
@@ -84,11 +87,8 @@ export function NewsletterCard({ newsletter, onDelete, onView }: NewsletterCardP
         </div>
       </CardContent>
       
-      <CardFooter className="pt-0">
-        <div className="flex justify-between items-center w-full">
-          <span className="text-sm text-muted-foreground">
-            Created: {formattedCreatedAt}
-          </span>
+      <CardFooter className="pt-0 mt-auto">
+        <div className="flex justify-end items-center w-full">
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -103,10 +103,9 @@ export function NewsletterCard({ newsletter, onDelete, onView }: NewsletterCardP
               View Issues
             </Button>
             <Button
-              variant="destructive"
               size="sm"
               onClick={handleDeleteClick}
-              className="gap-2"
+              className="gap-2 bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               <Trash2 className="w-4 h-4" />
               Delete

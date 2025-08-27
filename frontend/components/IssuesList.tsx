@@ -31,7 +31,7 @@ interface Newsletter {
 
 interface IssuesListProps {
   onBack: () => void;
-  onViewIssue: (issue: Issue) => void;
+  onViewIssue: (issue: Issue, newsletter: Newsletter) => void;
 }
 
 export function IssuesList({ onBack, onViewIssue }: IssuesListProps) {
