@@ -160,7 +160,6 @@ http://localhost:5173
 │   ├── tailwind.config.js       # Tailwind CSS configuration
 │   ├── vite.config.ts           # Vite build configuration
 │   └── ...
-├── google_oauth_client/         # Google OAuth client setup (if applicable)
 └── nginx/                       # Nginx web server configuration
     └── ...
 ```
