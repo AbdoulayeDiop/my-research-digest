@@ -3,8 +3,6 @@ from email.mime.text import MIMEText
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
-
 def send_email(subject, body, to_email, is_html=False):
     smtp_host = os.getenv("SMTP_HOST")
     smtp_port = int(os.getenv("SMTP_PORT"))

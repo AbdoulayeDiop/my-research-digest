@@ -9,8 +9,6 @@ from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 import numpy as np
 from dotenv import load_dotenv
 
-load_dotenv()
-
 async def analyze_paper(topic: str, paper: Dict) -> Dict:
     """
     Analyzes a paper based on a query.

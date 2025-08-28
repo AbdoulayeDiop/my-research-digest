@@ -27,6 +27,8 @@ class PaperSearch(ABC):
         """
         pass
 
+from config import FIELDS
+
 class SemanticSearch(PaperSearch):
     """
     A paper searcher that uses the Semantic Scholar API.
@@ -44,12 +46,7 @@ class SemanticSearch(PaperSearch):
         Returns:
             A list of dictionaries, where each dictionary represents a paper.
         """
-        fields = "title,authors,abstract,url,publicationVenue,publicationDate," + \
-        "citationCount,referenceCount,isOpenAccess,openAccessPdf,authors.authorId," + \
-        "authors.name,authors.affiliations,authors.paperCount,authors.citationCount," + \
-        "authors.hIndex,externalIds"
-
-        url = f"https://api.semanticscholar.org/graph/v1/paper/search?query={query}&publicationDateOrYear={start_date}:{end_date or ''}&limit={nb_papers}&fields={fields}"
+        url = f"https://api.semanticscholar.org/graph/v1/paper/search?query={query}&publicationDateOrYear={start_date}:{end_date or ''}&limit={nb_papers}&fields={FIELDS}"
         
         logging.info(f"Searching for papers with URL: {url}")
         response = requests.get(url)

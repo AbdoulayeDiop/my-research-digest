@@ -5,8 +5,6 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from dotenv import load_dotenv
 
-load_dotenv()
-
 
 def write_newsletter(topic: str, papers_with_analysis: List[Dict]) -> Dict:
     """

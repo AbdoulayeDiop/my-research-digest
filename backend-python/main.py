@@ -9,6 +9,7 @@ import asyncio
 from send_email import send_email
 import os
 from dotenv import load_dotenv
+from api_client import ApiClient
 
 load_dotenv()
 
@@ -18,76 +19,13 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # --- Configuration ---
 # Make sure your Node.js backend is running and accessible at this URL.
 
-def get_user_info(user_id):
-    """Retrieves the email and name of a user from the backend API."""
-    try:
-        response = requests.get(f"{os.getenv('NODE_API_BASE_URL')}/users/{user_id}")
-        response.raise_for_status()
-        user_data = response.json()
-        return {'email': user_data.get('email'), 'name': user_data.get('name')}
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Error retrieving user {user_id} email and name: {e}")
-        return None
-
-def get_newsletters():
-    """Retrieves all newsletters from the backend API."""
-    try:
-        response = requests.get(f"{os.getenv('NODE_API_BASE_URL')}/newsletters")
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Error retrieving newsletters: {e}")
-        return None
-
-def get_latest_issue(newsletter_id):
-    """Retrieves the latest issue for a given newsletter."""
-    try:
-        response = requests.get(f"{os.getenv('NODE_API_BASE_URL')}/newsletters/{newsletter_id}/issues?limit=1&sort=-publicationDate")
-        response.raise_for_status()
-        issues = response.json()
-        return issues[0] if issues else None
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Error retrieving latest issue for newsletter {newsletter_id}: {e}")
-        return None
-
-def create_papers(papers):
-    """
-    Creates papers in the database through the backend API.
-    The user needs to make sure the backend API supports this endpoint 
-    and the paper model includes 'synthesis' and 'usefulness' fields.
-    """
-    try:
-        # The backend should be adapted to handle a batch creation of papers
-        # and to include the new fields 'synthesis' and 'usefulness'.
-        response = requests.post(f"{os.getenv('NODE_API_BASE_URL')}/papers", json=papers)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Error creating papers: {e}")
-        return []
-
-def create_issue(newsletter_id, issue_data):
-    """
-    Creates a new issue for a newsletter through the backend API.
-    The user needs to make sure the backend API supports this endpoint
-    and the issue model includes 'introduction', 'conclusion', and 'contentMarkdown' fields.
-    """
-    try:
-        # The backend should be adapted to handle the new fields in the issue model.
-        response = requests.post(f"{os.getenv('NODE_API_BASE_URL')}/newsletters/{newsletter_id}/issues", json=issue_data)
-        response.raise_for_status()
-        logging.info(f"Successfully created issue for newsletter {newsletter_id}")
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Error creating issue for newsletter {newsletter_id}: {e}")
-        return None
-
 async def main():
     """Main function to run the newsletter generation cycle."""
+    api_client = ApiClient(os.getenv('NODE_API_BASE_URL'))
     while True:
         logging.info("Starting daily newsletter generation cycle...")
         
-        newsletters = get_newsletters()
+        newsletters = api_client.get_newsletters()
         if not newsletters:
             logging.warning("No newsletters found. Retrying in 24 hours.")
             await asyncio.sleep(24 * 60 * 60)
@@ -96,7 +34,7 @@ async def main():
         for newsletter in newsletters:
             logging.info(f"Processing newsletter: {newsletter.get('topic', 'N/A')}")
             
-            latest_issue = get_latest_issue(newsletter['_id'])
+            latest_issue = api_client.get_latest_issue(newsletter['_id'])
             if latest_issue:
                 # Assuming publicationDate is in ISO format with 'Z' at the end
                 last_issue_date = datetime.fromisoformat(latest_issue['publicationDate'].replace('Z', '+00:00'))
@@ -150,7 +88,7 @@ async def main():
                 "contentMarkdown": newsletter_data['content_markdown'],
             }
 
-            created_issue = create_issue(newsletter['_id'], issue_to_create)
+            created_issue = api_client.create_issue(newsletter['_id'], issue_to_create)
             if not created_issue:
                 logging.error(f"Failed to create issue for newsletter {newsletter.get('title', 'N/A')}. Skipping paper creation.")
                 continue
@@ -180,14 +118,14 @@ async def main():
                     'venueName': (paper_data.get('publicationVenue') or {}).get('name', None)
                 })
 
-            created_papers = create_papers(papers_to_create)
+            created_papers = api_client.create_papers(papers_to_create)
             
             # The issue is already created, and papers are linked via issueId. No need to update issue with paper IDs.
 
             # Send email to the newsletter creator
             user_id = newsletter.get('userId')
             if user_id:
-                user_info = get_user_info(user_id)
+                user_info = api_client.get_user_info(user_id)
                 if user_info and user_info.get('email'):
                     user_email = user_info.get('email')
                     user_name = user_info.get('name', 'user') # Default to 'user' if name is not available

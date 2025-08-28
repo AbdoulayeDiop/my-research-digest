@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { Navbar } from "./components/Navbar";
 import { Dashboard } from "./components/Dashboard";
 import { IssuesList } from "./components/IssuesList";
@@ -8,9 +7,9 @@ import { LandingPage } from "./components/LandingPage";
 import { PrivacyPolicy } from "./components/PrivacyPolicy";
 import { TermsOfService } from "./components/TermsOfService";
 import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
-import axios from "axios";
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { Footer } from "./components/Footer";
+import { useUserSync } from "./hooks/useUserSync";
 
 interface User {
   _id: string; // MongoDB user ID
@@ -20,28 +19,9 @@ interface User {
 }
 
 function AppContent() {
-  const { isLoading, isAuthenticated, user, loginWithRedirect, logout } = useAuth0();
-  const [ syncedUser, setSyncedUser ] = useState<User | null>(null);
+  const { isLoading, isAuthenticated, loginWithRedirect, logout } = useAuth0();
+  const syncedUser = useUserSync();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const syncUser = async () => {
-      if (isAuthenticated && user) {
-        try {
-          const response = await axios.post(`${import.meta.env.VITE_MONGO_API_URL}/api/users/sync`, {
-            auth0Id: user.sub,
-            email: user.email,
-            name: user.name,
-          });
-          setSyncedUser({...user, _id: response.data._id});
-          console.log("User synced:", syncedUser);
-        } catch (error) {
-          console.error("Error syncing user:", error);
-        }
-      }
-    };
-    syncUser();
-  }, [isAuthenticated, user]);
 
   const handleViewNewsletter = (newsletter: any) => {
     navigate(`/newsletters/${newsletter._id}`, { state: { newsletter } });
