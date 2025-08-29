@@ -1,9 +1,7 @@
 import requests
 import time
 from datetime import datetime, timedelta
-from paper_search import SemanticSearch
-from analyser import analyze_paper
-from writer import write_newsletter
+from newsletter_creator import NewsletterCreator
 import logging
 import asyncio
 from send_email import send_email
@@ -44,40 +42,19 @@ async def main():
             
             logging.info(f"Creating a new issue for newsletter '{newsletter['topic']}'...")
             
-            searcher = SemanticSearch()
-            # Search for papers from the last 7 days
             now = datetime.now()
             start_date = (now - timedelta(days=7)).strftime("%Y-%m-%d")
             end_date = now.strftime("%Y-%m-%d")
-            query = newsletter['topic']
-            papers = searcher.search(query=query, start_date=start_date, end_date=end_date, nb_papers=20)
+            result = await NewsletterCreator().create_newsletter(newsletter['topic'], start_date, end_date=end_date)
+            if result['status'] != 'success':
+                logging.error(f"Failed to create newsletter for topic {newsletter['topic']}. Skipping.")
+                continue
+            newsletter_data = result['newsletter']
+            papers = result['papers']
 
-            if not papers:
+            if len(papers) == 0:
                 logging.warning(f"No papers found for topic '{newsletter['topic']}'. Skipping.")
                 continue
-
-            analysis_tasks = []
-            for paper in papers:
-                analysis_tasks.append(analyze_paper(topic=newsletter['topic'], paper=paper))
-            
-            # Run analysis tasks concurrently
-            analyzed_results = await asyncio.gather(*analysis_tasks, return_exceptions=True)
-
-            papers_with_analysis = []
-            for paper, result in zip(papers, analyzed_results):
-                if isinstance(result, Exception):
-                    logging.error(f"Error analyzing paper: {result}")
-                elif result:
-                    papers_with_analysis.append({"paper": paper, "analysis": result})
-
-            if not papers_with_analysis:
-                logging.warning(f"No papers could be analyzed for topic '{newsletter['topic']}'. Skipping.")
-                continue
-
-            papers_with_analysis.sort(key=lambda x: x['analysis'].get('score', 0), reverse=True)
-            top_5_papers = papers_with_analysis[:5]
-
-            newsletter_data = write_newsletter(topic=newsletter['topic'], papers_with_analysis=top_5_papers)
 
             issue_to_create = {
                 "title": newsletter_data['title'],
@@ -94,10 +71,9 @@ async def main():
                 continue
             
             issue_id = created_issue['_id']
-
             # Prepare papers for creation, adding analysis data and issueId
             papers_to_create = []
-            for p in top_5_papers:
+            for p in papers:
                 paper_data = p['paper']
                 analysis_data = p['analysis']
                 
