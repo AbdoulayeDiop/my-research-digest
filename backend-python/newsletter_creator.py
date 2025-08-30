@@ -35,8 +35,10 @@ class NewsletterCreator:
             }
 
     def _get_paper_score(self, paper: Dict) -> float:
-        return np.mean([(author.get("citationCount") or 0) for author in paper.get("authors", [])]) * \
-            np.mean([(author.get("hIndex") or 0) for author in paper.get("authors", [])])
+        if paper.get("authors") is None or len(paper.get("authors")) == 0:
+            return 0
+        return np.mean([(author.get("citationCount") or 0) for author in paper.get("authors")]) * \
+            np.mean([(author.get("hIndex") or 0) for author in paper.get("authors")])
 
     async def _filter_papers(self, topic: str, papers: List[Dict]) -> List[Dict]:
         async def do_filter(paper):

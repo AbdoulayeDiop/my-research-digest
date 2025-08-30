@@ -14,9 +14,6 @@ load_dotenv()
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# --- Configuration ---
-# Make sure your Node.js backend is running and accessible at this URL.
-
 async def main():
     """Main function to run the newsletter generation cycle."""
     api_client = ApiClient(os.getenv('NODE_API_BASE_URL'))
