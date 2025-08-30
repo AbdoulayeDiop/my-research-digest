@@ -54,7 +54,7 @@ export function Navbar({ onGetStarted, onSignIn, onSignOut, user }: NavbarProps)
   const handleDeleteAccount = async () => {
     if (!user?._id) return;
     try {
-      await axios.delete(`${import.meta.env.VITE_MONGO_API_URL}/api/users/${user._id}`);
+      await axios.delete(`${import.meta.env.VITE_MONGO_API_URL}/users/${user._id}`);
       onSignOut(); // Log out user after successful deletion
     } catch (error) {
       console.error("Error deleting account:", error);

@@ -16,7 +16,7 @@ export function HowItWorksSection() {
 
         <div className="grid md:grid-cols-3 gap-8 mb-16">
           <Card className="text-center border-0 bg-card/50 backdrop-blur">
-            <CardHeader className="pb-4">
+            <CardHeader className="pb-4" withSeparator={false}>
               <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <Search className="w-8 h-8 text-primary" />
               </div>
@@ -34,7 +34,7 @@ export function HowItWorksSection() {
           </Card>
 
           <Card className="text-center border-0 bg-card/50 backdrop-blur">
-            <CardHeader className="pb-4">
+            <CardHeader className="pb-4" withSeparator={false}>
               <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <Database className="w-8 h-8 text-primary" />
               </div>
@@ -52,7 +52,7 @@ export function HowItWorksSection() {
           </Card>
 
           <Card className="text-center border-0 bg-card/50 backdrop-blur">
-            <CardHeader className="pb-4">
+            <CardHeader className="pb-4" withSeparator={false}>
               <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <Mail className="w-8 h-8 text-primary" />
               </div>

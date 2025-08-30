@@ -15,7 +15,7 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Badge } from "./ui/badge";
-import axios from "axios";
+import { useAxios } from "../lib/axios";
 
 interface Newsletter {
   _id?: string; // Optional for creation, required for existing
@@ -41,6 +41,7 @@ export function AddNewsletterDialog({ onCreate, user }: AddNewsletterDialogProps
     description: "",
     field: "",
   });
+  const axios = useAxios();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +54,7 @@ export function AddNewsletterDialog({ onCreate, user }: AddNewsletterDialogProps
 
     try {
       setIsLoading(true);
-      const response = await axios.post(`${import.meta.env.VITE_MONGO_API_URL}/api/newsletters`, {
+      const response = await axios.post(`/newsletters`, {
         topic: formData.topic,
         description: formData.description,
         field: formData.field,

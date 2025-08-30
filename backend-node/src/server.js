@@ -29,11 +29,11 @@ mongoose.connect(MONGODB_URI)
   .catch(err => console.error('MongoDB connection error:', err));
 
 // API Routes
-app.use('/api/newsletters', newsletterRoutes);
-app.use('/api/newsletters/:newsletterId/issues', issueRoutes); // For newsletter-specific issue operations
-app.use('/api/issues', issueRoutes); // For general issue operations (like count)
-app.use('/api/papers', paperRoutes);
-app.use('/api/users', userRoutes);
+app.use('/api/newsletters', jwtCheck, newsletterRoutes);
+app.use('/api/newsletters/:newsletterId/issues', jwtCheck, issueRoutes); // For newsletter-specific issue operations
+app.use('/api/issues', jwtCheck, issueRoutes); // For general issue operations (like count)
+app.use('/api/papers', jwtCheck, paperRoutes);
+app.use('/api/users', jwtCheck, userRoutes);
 
 // Basic route
 app.get('/', (req, res) => {

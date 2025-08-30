@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { useAxios } from "../lib/axios";
 
 interface AdminDashboardProps {
   onBack: () => void;
@@ -14,19 +14,20 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const axios = useAxios();
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setIsLoading(true);
         // Fetch total users
-        const usersResponse = await axios.get(`${import.meta.env.VITE_MONGO_API_URL}/api/users/count`);
+        const usersResponse = await axios.get(`/users/count`);
         // Fetch total newsletters
-        const newslettersResponse = await axios.get(`${import.meta.env.VITE_MONGO_API_URL}/api/newsletters/count`);
+        const newslettersResponse = await axios.get(`/newsletters/count`);
         // Fetch total issues
-        const issuesResponse = await axios.get(`${import.meta.env.VITE_MONGO_API_URL}/api/issues/count`);
+        const issuesResponse = await axios.get(`/issues/count`);
         // Fetch total papers
-        const papersResponse = await axios.get(`${import.meta.env.VITE_MONGO_API_URL}/api/papers/count`);
+        const papersResponse = await axios.get(`/papers/count`);
 
         setStats({
           totalUsers: usersResponse.data.count,
@@ -44,7 +45,7 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
     };
 
     fetchStats();
-  }, []);
+  }, [axios]);
 
   return (
     <div className="container mx-auto p-6">

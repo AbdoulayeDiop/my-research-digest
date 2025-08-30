@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
-import axios from "axios";
+import { useAxios } from "../lib/axios";
 
 interface Issue {
   _id: string;
@@ -40,12 +40,13 @@ export function IssuesList({ onBack, onViewIssue }: IssuesListProps) {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const axios = useAxios();
 
   useEffect(() => {
     const fetchIssues = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get(`${import.meta.env.VITE_MONGO_API_URL}/api/newsletters/${newsletter._id}/issues`);
+        const response = await axios.get(`/newsletters/${newsletter._id}/issues`);
         setIssues(response.data);
         setError(null);
       } catch (err) {
@@ -57,7 +58,7 @@ export function IssuesList({ onBack, onViewIssue }: IssuesListProps) {
     };
 
     fetchIssues();
-  }, [newsletter._id]);
+  }, [newsletter._id, axios]);
 
   return (
     <div className="container mx-auto p-6">

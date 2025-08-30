@@ -69,14 +69,6 @@ class NewsletterCreator:
         results = await asyncio.gather(*tasks)
         return results
 
-    def _summarize_newsletter(self, topic: str, newsletter: str) -> str:
-        chain = prompts.newsletter_summary_prompt | self.llm
-        response = chain.invoke({
-            "topic": topic,
-            "newsletter": newsletter
-        })
-        return response.content
-
     def _write_newsletter(self, topic, papers_with_analysis: List[Dict]):
         papers_summary = ""
         for item in papers_with_analysis:
@@ -111,7 +103,12 @@ class NewsletterCreator:
         newsletter += f"## 📈 Conclusion and Trends\n\n"
         newsletter += f"{conclusion}\n"
 
-        summary = self._summarize_newsletter(topic, newsletter)
+        chain = prompts.newsletter_summary_prompt | self.llm
+        response = chain.invoke({
+            "topic": topic,
+            "newsletter": newsletter
+        })
+        summary = response.content
 
         return {
             'title': title,

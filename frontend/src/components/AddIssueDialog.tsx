@@ -29,7 +29,28 @@ interface AddIssueDialogProps {
   onCreate: (issue: Issue) => void;
 }
 
-export function AddIssueDialog({ newsletterId, onCreate }: AddIssueDialogProps) {
+import { useAxios } from "../lib/axios";
+
+// ... (imports)
+
+export function AddIssueDialog({ newsletterId, onIssueAdded }: AddIssueDialogProps) {
+  const axios = useAxios();
+  // ... (rest of the component)
+
+  const onSubmit = async (data: any) => {
+    // ... (logic)
+    try {
+      const response = await axios.post(`/newsletters/${newsletterId}/issues`, {
+        // ... (data)
+      });
+      // ... (logic)
+    } catch (error) {
+      // ... (error handling)
+    }
+  };
+
+  // ... (rest of the component)
+}
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +67,7 @@ export function AddIssueDialog({ newsletterId, onCreate }: AddIssueDialogProps) 
 
     try {
       setIsLoading(true);
-      const response = await axios.post(`${import.meta.env.VITE_MONGO_API_URL}/api/newsletters/${newsletterId}/issues`, {
+      const response = await axios.post(`${import.meta.env.VITE_MONGO_API_URL}/newsletters/${newsletterId}/issues`, {
         title: title,
         status: 'draft',
       });

@@ -16,7 +16,7 @@ export function FeaturesDeepDiveSection() {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           <Card className="border-0 bg-card/50 backdrop-blur">
-            <CardHeader className="text-center pb-4">
+            <CardHeader className="text-center pb-4" withSeparator={false}>
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Search className="w-6 h-6 text-primary" />
               </div>
@@ -31,7 +31,7 @@ export function FeaturesDeepDiveSection() {
           </Card>
 
           <Card className="border-0 bg-card/50 backdrop-blur">
-            <CardHeader className="text-center pb-4">
+            <CardHeader className="text-center pb-4" withSeparator={false}>
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Brain className="w-6 h-6 text-primary" />
               </div>
@@ -46,7 +46,7 @@ export function FeaturesDeepDiveSection() {
           </Card>
 
           <Card className="border-0 bg-card/50 backdrop-blur">
-            <CardHeader className="text-center pb-4">
+            <CardHeader className="text-center pb-4" withSeparator={false}>
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Zap className="w-6 h-6 text-primary" />
               </div>
@@ -61,7 +61,7 @@ export function FeaturesDeepDiveSection() {
           </Card>
 
           <Card className="border-0 bg-card/50 backdrop-blur">
-            <CardHeader className="text-center pb-4">
+            <CardHeader className="text-center pb-4" withSeparator={false}>
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Clock className="w-6 h-6 text-primary" />
               </div>
@@ -76,7 +76,7 @@ export function FeaturesDeepDiveSection() {
           </Card>
 
           <Card className="border-0 bg-card/50 backdrop-blur">
-            <CardHeader className="text-center pb-4">
+            <CardHeader className="text-center pb-4" withSeparator={false}>
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Shield className="w-6 h-6 text-primary" />
               </div>
@@ -91,7 +91,7 @@ export function FeaturesDeepDiveSection() {
           </Card>
 
           <Card className="border-0 bg-card/50 backdrop-blur">
-            <CardHeader className="text-center pb-4">
+            <CardHeader className="text-center pb-4" withSeparator={false}>
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Users className="w-6 h-6 text-primary" />
               </div>

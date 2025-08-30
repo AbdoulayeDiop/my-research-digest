@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import axios from "axios";
+import { useAxios } from "../lib/axios";
 
 interface User {
   _id: string; // MongoDB user ID
@@ -12,12 +12,13 @@ interface User {
 export function useUserSync() {
   const { isAuthenticated, user } = useAuth0();
   const [syncedUser, setSyncedUser] = useState<User | null>(null);
+  const axios = useAxios();
 
   useEffect(() => {
     const syncUser = async () => {
       if (isAuthenticated && user) {
         try {
-          const response = await axios.post(`${import.meta.env.VITE_MONGO_API_URL}/api/users/sync`, {
+          const response = await axios.post(`/users/sync`, {
             auth0Id: user.sub,
             email: user.email,
             name: user.name,
@@ -30,7 +31,7 @@ export function useUserSync() {
       }
     };
     syncUser();
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, axios]);
 
   return syncedUser;
 }

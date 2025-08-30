@@ -3,7 +3,7 @@ import { Search } from "lucide-react";
 import { Input } from "./ui/input";
 import { NewsletterCard } from "./NewsletterCard";
 import { AddNewsletterDialog } from "./AddNewsletterDialog";
-import axios from "axios";
+import { useAxios } from "../lib/axios";
 
 interface Newsletter {
   _id: string; // MongoDB uses _id
@@ -32,12 +32,13 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const axios = useAxios();
 
   const fetchNewsletters = async () => {
     if (!user?.sub) return;
     try {
       setIsLoading(true);
-      const response = await axios.post(`${import.meta.env.VITE_MONGO_API_URL}/api/newsletters/user`, { userId: user.sub });
+      const response = await axios.post(`/newsletters/user`, { userId: user.sub });
       setNewsletters(response.data);
       setError(null);
     } catch (err) {
@@ -76,7 +77,7 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
 
   const handleDeleteNewsletter = async (id: string) => {
     try {
-      await axios.delete(`${import.meta.env.VITE_MONGO_API_URL}/api/newsletters/${id}`);
+      await axios.delete(`/newsletters/${id}`);
       setNewsletters(prev => prev.filter(newsletter => newsletter._id !== id));
     } catch (err) {
       setError("Failed to delete newsletter.");

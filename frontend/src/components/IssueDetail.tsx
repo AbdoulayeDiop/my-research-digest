@@ -6,7 +6,7 @@ import { Separator } from "./ui/separator";
 import { ScrollArea } from "./ui/scroll-area";
 import { useState, useEffect } from "react";
 import { useLocation } from 'react-router-dom';
-import axios from "axios";
+import { useAxios } from "../lib/axios";
 
 interface Issue {
   _id: string;
@@ -41,23 +41,13 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
   const [papers, setPapers] = useState<Paper[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  interface Issue {
-    _id: string;
-    title: string;
-    publicationDate: string;
-    introduction: string;
-    conclusion: string;
-    status: "published" | "draft";
-  }
-
-  // ... (rest of the file)
+  const axios = useAxios();
 
   useEffect(() => {
     const fetchPapers = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get(`${import.meta.env.VITE_MONGO_API_URL}/api/papers/byIssue/${issue._id}`);
+        const response = await axios.get(`/papers/byIssue/${issue._id}`);
         setPapers(response.data);
         setError(null);
       } catch (err) {
@@ -73,7 +63,7 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
     } else {
       setIsLoading(false);
     }
-  }, [issue._id]);
+  }, [issue._id, axios]);
 
   return (
     <div className="container mx-auto p-6">
