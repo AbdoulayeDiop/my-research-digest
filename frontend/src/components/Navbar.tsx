@@ -21,7 +21,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "./ui/alert-dialog";
-import axios from "axios";
+import { useAxios } from "../lib/axios";
 
 interface User {
   _id: string; // MongoDB user ID
@@ -41,12 +41,11 @@ export function Navbar({ onGetStarted, onSignIn, onSignOut, user }: NavbarProps)
   const navigate = useNavigate();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const axios = useAxios();
 
   useEffect(() => {
     if (user?.email) {
-      const adminEmails = import.meta.env.VITE_ADMIN_EMAILS ?
-        import.meta.env.VITE_ADMIN_EMAILS.split(',').map(email => email.trim()) :
-        [];
+      const adminEmails = import.meta.env.VITE_ADMIN_EMAILS || [];
       setIsAdmin(adminEmails.includes(user.email));
     }
   }, [user?.email]);
@@ -54,7 +53,7 @@ export function Navbar({ onGetStarted, onSignIn, onSignOut, user }: NavbarProps)
   const handleDeleteAccount = async () => {
     if (!user?._id) return;
     try {
-      await axios.delete(`${import.meta.env.VITE_MONGO_API_URL}/users/${user._id}`);
+      await axios.delete(`/users/${user._id}`);
       onSignOut(); // Log out user after successful deletion
     } catch (error) {
       console.error("Error deleting account:", error);

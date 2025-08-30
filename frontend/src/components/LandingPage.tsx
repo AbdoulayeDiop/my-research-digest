@@ -3,11 +3,8 @@ import { HowItWorksSection } from "./HowItWorksSection";
 import { BenefitsSection } from "./BenefitsSection";
 import { FeaturesDeepDiveSection } from "./FeaturesDeepDiveSection";
 import { CtaSection } from "./CtaSection";
-import { Footer } from "./Footer";
-import { BookOpen } from "lucide-react";
-import { Link } from 'react-router-dom';
-import { Button } from "./ui/button";
-import { Navbar } from "./Navbar";
+
+
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -15,7 +12,7 @@ interface LandingPageProps {
   isAuthenticated: boolean;
 }
 
-export function LandingPage({ onGetStarted, onSignIn, isAuthenticated }: LandingPageProps) {
+export function LandingPage({ onGetStarted, onSignIn }: LandingPageProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
       {/* Navigation */}

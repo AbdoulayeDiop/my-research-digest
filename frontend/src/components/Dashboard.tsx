@@ -38,7 +38,7 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
     if (!user?.sub) return;
     try {
       setIsLoading(true);
-      const response = await axios.post(`/newsletters/user`, { userId: user.sub });
+      const response = await axios.post('/newsletters/user', { userId: user.sub });
       setNewsletters(response.data);
       setError(null);
     } catch (err) {

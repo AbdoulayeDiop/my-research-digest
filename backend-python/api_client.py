@@ -5,7 +5,7 @@ import time
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
-AUTH0_DOMAIN = os.getenv('AUTH0_ISSUER_BASE_URL')
+AUTH0_DOMAIN = os.getenv('AUTH0_DOMAIN')
 AUTH0_AUDIENCE = os.getenv('AUTH0_AUDIENCE')
 AUTH0_CLIENT_ID = os.getenv('AUTH0_PYTHON_CLIENT_ID')
 AUTH0_CLIENT_SECRET = os.getenv('AUTH0_PYTHON_CLIENT_SECRET')
@@ -32,7 +32,6 @@ class ApiClient:
             return self.token
 
         logging.info("Fetching new Auth0 access token...")
-        print(f"AUTH0_DOMAIN: {AUTH0_DOMAIN}") # Add this line for debugging
         token_url = f"https://{AUTH0_DOMAIN}/oauth/token"
         headers = {'content-type': 'application/json'}
         payload = {

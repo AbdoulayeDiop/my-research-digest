@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useLocation } from 'react-router-dom';
-import { ArrowLeft, Calendar, ExternalLink, FileText } from "lucide-react";
+import { ArrowLeft, Calendar, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { ScrollArea } from "./ui/scroll-area";
+
 import { useAxios } from "../lib/axios";
 
 interface Issue {

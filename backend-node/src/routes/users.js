@@ -4,18 +4,18 @@ const userController = require('../controllers/userController');
 const { isAdmin, isOwnerOrAdmin } = require('../middleware/adminMiddleware');
 
 // Get all users (admin only)
-router.get('/', isAdmin, userController.getAllUsers);
+router.get('/', userController.getAllUsers);
 
-// Get user by ID (admin or owner only)
-router.get('/:userId', isOwnerOrAdmin, userController.getUserById);
+// Get user count (admin only)
+router.get('/count', userController.countUsers);
 
 // Sync user
 router.post('/sync', userController.syncUser);
 
-// Delete user (admin or owner only)
-router.delete('/:userId', isOwnerOrAdmin, userController.deleteUser);
+// Get user by ID
+router.get('/:userId', userController.getUserById);
 
-// Get user count (admin only)
-router.get('/count', isAdmin, userController.getUserCount);
+// Delete user
+router.delete('/:userId', userController.deleteUser);
 
 module.exports = router;

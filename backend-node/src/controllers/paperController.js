@@ -14,8 +14,9 @@ exports.getPapersByIssue = async (req, res) => {
 // Create multiple papers
 exports.createPapers = async (req, res) => {
   try {
+    const { issueId } = req.params;
     const papersData = req.body; // expecting an array of paper objects, each with an issueId
-    const createdPapers = await Paper.insertMany(papersData);
+    const createdPapers = await Paper.insertMany(papersData.map(paper => ({ ...paper, issue: issueId })));
     res.status(201).json(createdPapers);
   } catch (error) {
     res.status(500).json({ message: error.message });

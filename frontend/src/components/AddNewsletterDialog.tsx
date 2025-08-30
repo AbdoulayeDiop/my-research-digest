@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -14,22 +14,29 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Badge } from "./ui/badge";
+
 import { useAxios } from "../lib/axios";
 
 interface Newsletter {
-  _id?: string; // Optional for creation, required for existing
+  _id: string; // MongoDB uses _id
   topic: string;
   description?: string;
   field?: string;
-  createdDate?: string; // Handled by backend
-  lastIssue?: string; // Handled by backend
-  totalIssues?: number; // Handled by backend
+  createdAt: string; // Changed from createdDate
+  totalIssues: number;
+  lastIssueDate?: string; // New field from aggregation
+}
+
+interface User {
+  _id: string; // MongoDB user ID
+  sub?: string;
+  name?: string;
+  email?: string;
 }
 
 interface AddNewsletterDialogProps {
-  onCreate: (newsletter: Newsletter) => void;
-  user: { sub: string; email: string; name: string };
+  onCreate: (newsletter: Newsletter) => Promise<void>;
+  user: User;
 }
 
 export function AddNewsletterDialog({ onCreate, user }: AddNewsletterDialogProps) {

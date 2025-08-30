@@ -1,3 +1,7 @@
+from dotenv import load_dotenv
+
+load_dotenv()
+
 import requests
 import time
 from datetime import datetime, timedelta
@@ -6,10 +10,7 @@ import logging
 import asyncio
 from send_email import send_email
 import os
-from dotenv import load_dotenv
 from api_client import ApiClient
-
-load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
