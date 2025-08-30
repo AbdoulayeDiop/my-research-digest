@@ -79,7 +79,7 @@ exports.syncUser = async (req, res) => {
 
 exports.deleteUser = async (req, res) => {
   try {
-    const userId = req.params.id; // This will be the MongoDB _id of the user
+    const userId = req.params.userId; // This will be the MongoDB _id of the user
 
     // 1. Find all newsletters created by this user
     const newsletters = await Newsletter.find({ userId });
