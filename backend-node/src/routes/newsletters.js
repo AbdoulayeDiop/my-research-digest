@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const newsletterController = require('../controllers/newsletterController');
-const { isAdmin, isOwnerOfNewsletterOrAdmin, isOwnerOrAdmin } = require('../middleware/adminMiddleware');
 
 // Create a new newsletter
 router.post('/', newsletterController.createNewsletter);

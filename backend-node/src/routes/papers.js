@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const paperController = require('../controllers/paperController');
-const { isAdmin, isOwnerOfPaperOrAdmin, isOwnerOfIssueOrAdmin } = require('../middleware/adminMiddleware');
 
 // POST /api/papers (Create multiple papers)
 router.post('/', paperController.createPapers);

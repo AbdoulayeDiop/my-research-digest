@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
-const { isAdmin, isOwnerOrAdmin } = require('../middleware/adminMiddleware');
 
 // Get all users (admin only)
 router.get('/', userController.getAllUsers);

@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router({ mergeParams: true }); // mergeParams to access newsletterId from parent route
 const issueController = require('../controllers/issueController');
-const { isOwnerOfIssueOrAdmin, isAdmin, isOwnerOfNewsletterOrAdmin } = require('../middleware/adminMiddleware');
 
 // Create a new issue for a newsletter
 router.post('/', issueController.createIssue);
