@@ -52,9 +52,9 @@ class SemanticSearch(PaperSearch):
         response = requests.get(url)
         
         if response.status_code == 200:
-            logging.info("Successfully retrieved papers from Semantic Scholar API.")
-            data = response.json()
-            return data.get('data', [])
+            data = response.json().get('data', [])
+            logging.info(f"Successfully retrieved {len(data)} papers from Semantic Scholar API.")
+            return data
             
         logging.error(f"Failed to retrieve papers from Semantic Scholar API. Status code: {response.status_code}")
         return []

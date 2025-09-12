@@ -35,15 +35,41 @@ paper_analyzer_prompt = PromptTemplate(
 
 paper_filterer_prompt = PromptTemplate(
     template="""
-    You are a research assistant. Based on the following information, your task is to determine if the paper is relevant to the user's topic of interest.
-    The user's topic of interest is: "{topic}"
-    The paper's title is: "{title}"
-    The paper's abstract is: "{abstract}"
-    Return "yes" if the paper is relevant, otherwise return "no".
-    Make sure you understand the user's topic of interest and the paper's content before making a decision.
+    You are a research assistant tasked with filtering academic papers based on relevance to a specific research topic.
 
-    Example :
-    For the topic "LLMs Architecture", a paper that is about LLMs without a focus or a particular section on LLMs architecture would be considered not relevant.
+    USER'S RESEARCH TOPIC: "{topic}"
+    
+    PAPER DETAILS:
+    Title: "{title}"
+    Abstract: "{abstract}"
+
+    INSTRUCTIONS:
+    1. Carefully analyze the user's topic to understand the specific focus area and scope
+    2. Read the paper's title and abstract thoroughly
+    3. Determine if there is a substantial connection between the paper's content and the user's research topic
+
+    RELEVANCE CRITERIA:
+    - HIGH RELEVANCE: Paper directly addresses the topic as a primary focus
+    - MEDIUM RELEVANCE: Paper touches on the topic but may not be the main focus
+    - LOW RELEVANCE: Paper has minimal connection or no connection to the topic
+
+    DECISION RULE:
+    - Return "yes" ONLY for HIGH relevance papers
+    - Return "no" for MEDIUM and LOW relevance papers
+
+    EXAMPLES:
+    - Topic: "LLM Architecture" → Paper about "Attention mechanisms in transformer models" = HIGH relevance = "yes"
+    - Topic: "LLM Architecture" → Paper about "General applications of large language models with a section on architecture impact" = MEDIUM relevance = "no"
+    - Topic: "Machine Learning Security" → Paper about "Adversarial attacks on neural networks" = HIGH relevance = "yes"
+    - Topic: "Machine Learning Security" → Paper about "Basic neural network training" = LOW relevance = "no"
+
+    RESPONSE FORMAT:
+    Use the following structured format:
+
+    <thinking>[Your detailed reasoning about the user topic of interest, the paper and its relevance to the topic based on the given rules]</thinking>
+    <response>[Your final decision: "yes" or "no"]</response>
+
+    Now, analyze the provided paper and determine its relevance to the user's research topic. Think step-by-step.
     """
 )
 

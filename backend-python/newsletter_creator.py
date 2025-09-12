@@ -5,59 +5,78 @@ from langchain_openai import ChatOpenAI
 import asyncio
 from typing import List, Dict
 import numpy as np
+import re
+from bs4 import BeautifulSoup
+
+
+def extract_tag_beautifulsoup(response_text, tag):
+    """Extract thinking content using BeautifulSoup (more robust)"""
+    try:
+        soup = BeautifulSoup(response_text, 'html.parser')
+        element = soup.find(tag)
+        if element:
+            return element.get_text().strip()
+    except:
+        return None
+    return None
+
+
+def get_paper_score(paper: Dict) -> float:
+    if paper.get("authors") is None or len(paper.get("authors")) == 0:
+        return 0
+    return np.mean([(author.get("citationCount") or 0) for author in paper.get("authors")]) * \
+        np.mean([(author.get("hIndex") or 0)
+                for author in paper.get("authors")])
+
 
 class NewsletterCreator:
     def __init__(self, model_name: str = "gpt-4o-mini", temperature: float = 0):
         self.searcher = SemanticSearch()
         self.llm = ChatOpenAI(model_name=model_name, temperature=temperature)
 
-    async def create_newsletter(self, topic: str, start_date: str, nb_papers: int=5, end_date: str = None, max_papers: int =20) -> data_models.NewsletterWriterOutput:
-        papers = None
-        newsletter = None
-        
-        try:
-            papers = self.searcher.search(topic, start_date, max_papers, end_date=end_date)
+    async def create_newsletter(self, topic: str, start_date: str, nb_papers: int = 5, end_date: str = None, max_papers: int = 20) -> data_models.NewsletterWriterOutput:
+        papers = self.searcher.search(
+            topic, start_date, max_papers, end_date=end_date)
+        if papers:
             papers = await self._filter_papers(topic, papers)
-            papers = sorted(papers, key=self._get_paper_score, reverse=True)[:nb_papers]
+            papers = sorted(papers, key=get_paper_score,
+                            reverse=True)[:nb_papers]
             if len(papers) > 0:
                 analyzes = await self._analyze_papers(topic, papers)
-                papers_with_analysis = [{"paper": paper, "analysis": analysis.model_dump()} for paper, analysis in zip(papers, analyzes)]
-                newsletter = self._write_newsletter(topic, papers_with_analysis)
-            return {
-                "status": "success",
-                "newsletter": newsletter,
-                "papers": papers_with_analysis
-            }
-        except Exception as e:
-            return {
-                "status": "error",
-                "message": f"No relevant papers found for the newsletter of this week on topic {topic}."
-            }
-
-    def _get_paper_score(self, paper: Dict) -> float:
-        if paper.get("authors") is None or len(paper.get("authors")) == 0:
-            return 0
-        return np.mean([(author.get("citationCount") or 0) for author in paper.get("authors")]) * \
-            np.mean([(author.get("hIndex") or 0) for author in paper.get("authors")])
+                papers_with_analysis = [{"paper": paper, "analysis": analysis.model_dump(
+                )} for paper, analysis in zip(papers, analyzes)]
+                newsletter = self._write_newsletter(
+                    topic, papers_with_analysis)
+                return {'newsletter': newsletter, 'papers': papers_with_analysis}
+        return None
 
     async def _filter_papers(self, topic: str, papers: List[Dict]) -> List[Dict]:
         async def do_filter(paper):
-            chain = prompts.paper_filterer_prompt | self.llm.with_structured_output(data_models.PaperFiltererOutput)
+            chain = prompts.paper_filterer_prompt | self.llm
             response = await chain.ainvoke({
                 "topic": topic,
                 "title": paper['title'],
                 "abstract": paper['abstract']
             })
-            return response.is_relevant
+            # thinking = extract_tag_beautifulsoup(response.content, 'thinking')
+            is_relevant = extract_tag_beautifulsoup(
+                response.content, 'response')
+            if is_relevant is not None:
+                return is_relevant
+            else:
+                raise ValueError(
+                    "Could not parse the response to determine relevance.")
 
         tasks = [do_filter(paper) for paper in papers]
         results = await asyncio.gather(*tasks)
-        filtered_papers = [paper for paper, is_relevant in zip(papers, results) if is_relevant == "yes"]
+        filtered_papers = [paper for paper, is_relevant in zip(
+            papers, results) if is_relevant == "yes"]
         return filtered_papers
 
     async def _analyze_papers(self, topic: str, papers: List[Dict]) -> List[data_models.PaperAnalyzerOutput]:
         async def do_analysis(paper):
-            chain = prompts.paper_analyzer_prompt | self.llm.with_structured_output(data_models.PaperAnalyzerOutput)
+            chain = prompts.paper_analyzer_prompt | self.llm.with_structured_output(
+                data_models.PaperAnalyzerOutput)
             response = await chain.ainvoke({
                 "topic": topic,
                 "title": paper['title'],
@@ -74,7 +93,8 @@ class NewsletterCreator:
         for item in papers_with_analysis:
             papers_summary += f"- {item['paper']['title']}: {item['analysis']['synthesis']}\n"
 
-        chain = prompts.newsletter_writer_prompt | self.llm.with_structured_output(data_models.NewsletterWriterOutput)
+        chain = prompts.newsletter_writer_prompt | self.llm.with_structured_output(
+            data_models.NewsletterWriterOutput)
         output = chain.invoke({
             "topic": topic,
             "papers_summary": papers_summary
@@ -119,13 +139,15 @@ class NewsletterCreator:
             'content_markdown': newsletter
         }
 
+
 if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
-    
+
     async def main():
         creator = NewsletterCreator()
-        result = await creator.create_newsletter("LLM architecture", "2025-08-23")
-        print(result["newsletter"]["content_markdown"])
+        result = await creator.create_newsletter("AI applications in farming", "2025-08-31", end_date="2025-09-06", max_papers=3)
+        if result and "newsletter" in result:
+            print(result["newsletter"]["content_markdown"])
 
     asyncio.run(main())

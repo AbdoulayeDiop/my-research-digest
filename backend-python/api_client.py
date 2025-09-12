@@ -17,11 +17,11 @@ class ApiClient:
         self.token = None
         self.token_expires_at = 0
         retry = Retry(
-            total=3,
-            read=3,
-            connect=3,
-            backoff_factor=0.3,
-            status_forcelist=(500, 502, 504)
+            total=10,
+            read=5,
+            connect=5,
+            backoff_factor=2,
+            status_forcelist=(429, 500, 502, 503, 504)
         )
         adapter = HTTPAdapter(max_retries=retry)
         self.session.mount('http://', adapter)
