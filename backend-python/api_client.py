@@ -51,6 +51,7 @@ class ApiClient:
         except requests.exceptions.RequestException as e:
             logging.error(f"Error fetching Auth0 access token: {e}")
             return None
+        # return "token"
 
     def get_user_info(self, user_id):
         """Retrieves the email and name of a user from the backend API."""

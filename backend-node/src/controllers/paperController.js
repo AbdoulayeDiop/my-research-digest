@@ -3,8 +3,8 @@ const Paper = require('../models/Paper');
 // Get all papers for a specific issue
 exports.getPapersByIssue = async (req, res) => {
   try {
-    const { issueId } = req.params;
-    const papers = await Paper.find({ issue: issueId });
+    const { issueId } = req.query;
+    const papers = await Paper.find({ issueId: issueId });
     res.status(200).json(papers);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -14,9 +14,8 @@ exports.getPapersByIssue = async (req, res) => {
 // Create multiple papers
 exports.createPapers = async (req, res) => {
   try {
-    const { issueId } = req.params;
     const papersData = req.body; // expecting an array of paper objects, each with an issueId
-    const createdPapers = await Paper.insertMany(papersData.map(paper => ({ ...paper, issue: issueId })));
+    const createdPapers = await Paper.insertMany(papersData);
     res.status(201).json(createdPapers);
   } catch (error) {
     res.status(500).json({ message: error.message });

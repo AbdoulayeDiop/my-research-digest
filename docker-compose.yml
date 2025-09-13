@@ -49,6 +49,8 @@ services:
     container_name: my-research-digest-backend-python
     env_file:
       - ./.production.env
+    depends_on:
+      - backend-node # backend-python needs node API backend for API calls
     networks:
       - my-research-digest-network
 
