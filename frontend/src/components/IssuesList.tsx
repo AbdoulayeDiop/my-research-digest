@@ -48,7 +48,7 @@ export function IssuesList({ onBack, onViewIssue }: IssuesListProps) {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        let currentNewsletter = newsletter;
+        let currentNewsletter = location.state?.newsletter;
         if (!currentNewsletter) {
           const newsletterResponse = await axios.get(`/newsletters/${newsletterId}`);
           currentNewsletter = newsletterResponse.data;
@@ -68,11 +68,11 @@ export function IssuesList({ onBack, onViewIssue }: IssuesListProps) {
     };
 
     fetchData();
-  }, [newsletterId, axios, newsletter]);
+  }, [newsletterId, axios, location.state]);
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6 text-center">
+      <div className="p-6 text-center">
         <p className="text-muted-foreground">Loading newsletter...</p>
       </div>
     );
@@ -80,7 +80,7 @@ export function IssuesList({ onBack, onViewIssue }: IssuesListProps) {
 
   if (error) {
     return (
-      <div className="container mx-auto p-6 text-center">
+      <div className="p-6 text-center">
         <p className="text-destructive">{error}</p>
       </div>
     );
@@ -88,14 +88,14 @@ export function IssuesList({ onBack, onViewIssue }: IssuesListProps) {
 
   if (!newsletter) {
     return (
-      <div className="container mx-auto p-6 text-center">
+      <div className="p-6 text-center">
         <p className="text-muted-foreground">Newsletter not found.</p>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="p-6">
       {/* Header */}
       <div className="mb-8">
         <Button 

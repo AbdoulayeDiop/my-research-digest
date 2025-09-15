@@ -52,7 +52,7 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
     const fetchIssueAndPapers = async () => {
       try {
         setIsLoading(true);
-        let currentIssue = issue;
+        let currentIssue = location.state?.issue;
         if (!currentIssue) {
           const issueResponse = await axios.get(`/issues/${issueId}`);
           currentIssue = issueResponse.data;
@@ -64,11 +64,7 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
           setPapers(papersResponse.data);
         }
         
-        // If we didn't have the newsletter context, we can't get it easily
-        // without another API call. For now, the back button will just go home.
-        if (!newsletter && currentIssue) {
-            // This is a placeholder. Ideally you might fetch newsletter details
-            // if they are needed for more than just the back button.
+        if (!location.state?.newsletter && currentIssue) {
             setNewsletter({ _id: currentIssue.newsletterId });
         }
 
@@ -81,7 +77,7 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
     };
 
     fetchIssueAndPapers();
-  }, [issueId, axios, issue, newsletter]);
+  }, [issueId, axios, location.state]);
 
   const handleBack = () => {
     if (newsletter) {
@@ -93,7 +89,7 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6 text-center">
+      <div className="p-6 text-center">
         <p className="text-muted-foreground">Loading issue...</p>
       </div>
     );
@@ -101,7 +97,7 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
 
   if (error) {
     return (
-      <div className="container mx-auto p-6 text-center">
+      <div className="p-6 text-center">
         <p className="text-destructive">{error}</p>
       </div>
     );
@@ -109,14 +105,14 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
   
   if (!issue) {
     return (
-      <div className="container mx-auto p-6 text-center">
+      <div className="p-6 text-center">
         <p className="text-muted-foreground">Issue not found.</p>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="p-6">
       <Helmet>
         <title>{issue.title} - My Research Digest</title>
         <meta name="description" content={issue.introduction} />

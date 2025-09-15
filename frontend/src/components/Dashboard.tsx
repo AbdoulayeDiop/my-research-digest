@@ -86,7 +86,7 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
   };
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="p-6">
       {/* Header */}
       <div className="mb-8">
         {user?.name? <h1 className="mb-2">Welcome back, {user.name.split(' ')[0]}!</h1>: <h1 className="mb-2">Welcome to My Research Digest</h1>}
