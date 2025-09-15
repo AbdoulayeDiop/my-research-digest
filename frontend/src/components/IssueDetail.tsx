@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 
 import { useState, useEffect } from "react";
-import { useLocation } from 'react-router-dom';
+import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { useAxios } from "../lib/axios";
 
 interface Issue {
@@ -15,6 +15,7 @@ interface Issue {
   conclusion: string;
   papers: string[];
   status: "published" | "draft";
+  newsletterId: string;
 }
 
 interface Paper {
@@ -27,7 +28,7 @@ interface Paper {
   synthesis: string;
   usefulness: string;
   score: number;
-  venueName?: string; // Add venueName
+  venueName?: string;
 }
 
 interface IssueDetailProps {
@@ -36,33 +37,83 @@ interface IssueDetailProps {
 
 export function IssueDetail({ onBack }: IssueDetailProps) {
   const location = useLocation();
-  const { issue, newsletter } = location.state as { issue: Issue, newsletter: any };
+  const navigate = useNavigate();
+  const { issueId } = useParams<{ issueId: string }>();
+  
+  const [issue, setIssue] = useState<Issue | null>(location.state?.issue);
+  const [newsletter, setNewsletter] = useState<any>(location.state?.newsletter);
+  
   const [papers, setPapers] = useState<Paper[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const axios = useAxios();
 
   useEffect(() => {
-    const fetchPapers = async () => {
+    const fetchIssueAndPapers = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get(`/papers/byIssue/${issue._id}`);
-        setPapers(response.data);
-        setError(null);
+        let currentIssue = issue;
+        if (!currentIssue) {
+          const issueResponse = await axios.get(`/issues/${issueId}`);
+          currentIssue = issueResponse.data;
+          setIssue(currentIssue);
+        }
+
+        if (currentIssue) {
+          const papersResponse = await axios.get(`/papers/byIssue/${currentIssue._id}`);
+          setPapers(papersResponse.data);
+        }
+        
+        // If we didn't have the newsletter context, we can't get it easily
+        // without another API call. For now, the back button will just go home.
+        if (!newsletter && currentIssue) {
+            // This is a placeholder. Ideally you might fetch newsletter details
+            // if they are needed for more than just the back button.
+            setNewsletter({ _id: currentIssue.newsletterId });
+        }
+
       } catch (err) {
-        setError("Failed to fetch papers for this issue.");
-        console.error("Error fetching papers:", err);
+        setError("Failed to fetch issue or papers.");
+        console.error("Error fetching data:", err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (issue._id) { // Fetch papers if issue ID is available
-      fetchPapers();
+    fetchIssueAndPapers();
+  }, [issueId, axios, issue, newsletter]);
+
+  const handleBack = () => {
+    if (newsletter) {
+      onBack(newsletter);
     } else {
-      setIsLoading(false);
+      navigate('/'); // Fallback if no newsletter context
     }
-  }, [issue._id, axios]);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-6 text-center">
+        <p className="text-muted-foreground">Loading issue...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6 text-center">
+        <p className="text-destructive">{error}</p>
+      </div>
+    );
+  }
+  
+  if (!issue) {
+    return (
+      <div className="container mx-auto p-6 text-center">
+        <p className="text-muted-foreground">Issue not found.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6">
@@ -77,14 +128,15 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
         <meta name="twitter:title" content={`${issue.title} - My Research Digest`} />
         <meta name="twitter:description" content={issue.introduction} />
       </Helmet>
+      
       <div className="mb-8">
         <Button
           variant="ghost"
-          onClick={() => onBack(newsletter)}
+          onClick={handleBack}
           className="mb-4 gap-2"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Issues
+          Back
         </Button>
 
         <div className="mb-6">
@@ -97,7 +149,6 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
               <Calendar className="w-4 h-4" />
               Published {new Date(issue.publicationDate).toLocaleDateString()}
             </div>
-            
           </div>
 
           <div className="bg-muted/30 rounded-lg p-4">
@@ -109,15 +160,9 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
         </div>
       </div>
 
-      {/* Research Papers */}
       <div>
         <h2 className="mb-4">Featured Research Papers</h2>
-
-        {isLoading ? (
-          <div className="text-center py-12 text-muted-foreground">Loading papers...</div>
-        ) : error ? (
-          <div className="text-center py-12 text-destructive">Error: {error}</div>
-        ) : papers.length === 0 ? (
+        {papers.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">No papers found for this issue.</div>
         ) : (
           <div className="space-y-6">
@@ -146,7 +191,6 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
                     </a>
                   </div>
                 </CardHeader>
-
                 <CardContent>
                   <h4 className="font-semibold">Synthesis:</h4>
                   <p className="text-sm text-muted-foreground mb-2">

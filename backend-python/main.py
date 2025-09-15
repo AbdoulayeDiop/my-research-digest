@@ -104,8 +104,7 @@ async def process_newsletter(api_client, newsletter):
                 # Default to 'user' if name is not available
                 user_name = user_info.get('name', 'user')
                 subject = f"New Issue Available: {newsletter.get('topic')}"
-                # issue_link = f"{os.getenv('APP_DOMAIN')}/issues/{created_issue['_id']}"
-                issue_link = f"{os.getenv('APP_DOMAIN')}"
+                issue_link = f"{os.getenv('APP_DOMAIN')}/issues/{created_issue['_id']}"
                 body = f"""
                     <p>Dear {user_name},</p>
                     <p>A new issue for your newsletter on topic <strong>{newsletter.get('topic')}</strong> is now available.</p>

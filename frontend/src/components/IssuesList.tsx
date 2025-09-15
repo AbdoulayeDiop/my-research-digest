@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { ArrowLeft, Calendar, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
@@ -36,29 +36,63 @@ interface IssuesListProps {
 
 export function IssuesList({ onBack, onViewIssue }: IssuesListProps) {
   const location = useLocation();
-  const { newsletter } = location.state as { newsletter: Newsletter };
+  const { newsletterId } = useParams<{ newsletterId: string }>();
+  
+  const [newsletter, setNewsletter] = useState<Newsletter | null>(location.state?.newsletter);
   const [issues, setIssues] = useState<Issue[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const axios = useAxios();
 
   useEffect(() => {
-    const fetchIssues = async () => {
+    const fetchData = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get(`/newsletters/${newsletter._id}/issues`);
-        setIssues(response.data);
-        setError(null);
+        let currentNewsletter = newsletter;
+        if (!currentNewsletter) {
+          const newsletterResponse = await axios.get(`/newsletters/${newsletterId}`);
+          currentNewsletter = newsletterResponse.data;
+          setNewsletter(currentNewsletter);
+        }
+
+        if (currentNewsletter) {
+          const issuesResponse = await axios.get(`/newsletters/${currentNewsletter._id}/issues`);
+          setIssues(issuesResponse.data);
+        }
       } catch (err) {
-        setError("Failed to fetch issues.");
-        console.error("Error fetching issues:", err);
+        setError("Failed to fetch newsletter or issues.");
+        console.error("Error fetching data:", err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchIssues();
-  }, [newsletter._id, axios]);
+    fetchData();
+  }, [newsletterId, axios, newsletter]);
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-6 text-center">
+        <p className="text-muted-foreground">Loading newsletter...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6 text-center">
+        <p className="text-destructive">{error}</p>
+      </div>
+    );
+  }
+
+  if (!newsletter) {
+    return (
+      <div className="container mx-auto p-6 text-center">
+        <p className="text-muted-foreground">Newsletter not found.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6">
@@ -109,11 +143,7 @@ export function IssuesList({ onBack, onViewIssue }: IssuesListProps) {
       <div className="space-y-4">
         <h2>All Issues</h2>
         
-        {isLoading ? (
-          <div className="text-center py-12 text-muted-foreground">Loading issues...</div>
-        ) : error ? (
-          <div className="text-center py-12 text-destructive">Error: {error}</div>
-        ) : issues.length === 0 ? (
+        {issues.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">No issues found for this newsletter.</div>
         ) : (
           <div className="space-y-4">
