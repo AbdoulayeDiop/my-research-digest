@@ -64,7 +64,7 @@ export function Navbar({ onGetStarted, onSignIn, onSignOut, user }: NavbarProps)
   
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-6 py-4">
+      <div className="max-w-6xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo and Brand */}
           <Link to="/" className="flex items-center gap-2">

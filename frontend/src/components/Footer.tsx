@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 export function Footer({ isAuthenticated }: { isAuthenticated: boolean }) {
   return (
     <footer className="border-t bg-muted/30 mt-20">
-      <div className="container mx-auto px-6 py-12">
+      <div className="max-w-6xl mx-auto px-6 py-12">
         <div className="grid md:grid-cols-4 gap-8">
           <div className="col-span-2">
             <Link to="/" className="flex items-center gap-3 mb-4">
