@@ -10,6 +10,7 @@ import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { Footer } from "./components/Footer";
 import { useUserSync } from "./hooks/useUserSync";
+import { HelmetProvider } from 'react-helmet-async';
 
 interface User {
   _id: string; // MongoDB user ID
@@ -80,7 +81,9 @@ export default function App() {
       }}
     >
       <Router>
-        <AppContent />
+        <HelmetProvider>
+          <AppContent />
+        </HelmetProvider>
       </Router>
     </Auth0Provider>
   );

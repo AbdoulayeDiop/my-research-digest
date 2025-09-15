@@ -1,3 +1,4 @@
+import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, Calendar, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
@@ -65,7 +66,17 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
 
   return (
     <div className="container mx-auto p-6">
-      {/* Header */}
+      <Helmet>
+        <title>{issue.title} - My Research Digest</title>
+        <meta name="description" content={issue.introduction} />
+        <meta property="og:title" content={`${issue.title} - My Research Digest`} />
+        <meta property="og:description" content={issue.introduction} />
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content={`https://www.my-research-digest.com/issues/${issue._id}`} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${issue.title} - My Research Digest`} />
+        <meta name="twitter:description" content={issue.introduction} />
+      </Helmet>
       <div className="mb-8">
         <Button
           variant="ghost"
