@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft, Calendar, ExternalLink } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { ArrowLeft, Calendar, ExternalLink, ThumbsUp, ThumbsDown, Heart } from "lucide-react";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 
 import { useState, useEffect } from "react";
@@ -16,6 +16,7 @@ interface Issue {
   papers: string[];
   status: "published" | "draft";
   newsletterId: string;
+  read: boolean;
 }
 
 interface Paper {
@@ -29,6 +30,12 @@ interface Paper {
   usefulness: string;
   score: number;
   venueName?: string;
+  feedback: 'like' | 'dislike' | 'heart' | null;
+}
+
+interface Newsletter {
+    _id: string;
+    userId: string;
 }
 
 interface IssueDetailProps {
@@ -41,7 +48,7 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
   const { issueId } = useParams<{ issueId: string }>();
   
   const [issue, setIssue] = useState<Issue | null>(location.state?.issue);
-  const [newsletter, setNewsletter] = useState<any>(location.state?.newsletter);
+  const [newsletter, setNewsletter] = useState<Newsletter | null>(location.state?.newsletter);
   
   const [papers, setPapers] = useState<Paper[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -65,7 +72,8 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
         }
         
         if (!location.state?.newsletter && currentIssue) {
-            setNewsletter({ _id: currentIssue.newsletterId });
+            const newsletterResponse = await axios.get(`/newsletters/${currentIssue.newsletterId}`);
+            setNewsletter(newsletterResponse.data);
         }
 
       } catch (err) {
@@ -79,11 +87,36 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
     fetchIssueAndPapers();
   }, [issueId, axios, location.state]);
 
+  useEffect(() => {
+    const markAsRead = async () => {
+      if (issue && !issue.read) {
+        try {
+          await axios.put(`/issues/${issue._id}/read`, { read: true });
+          setIssue({ ...issue, read: true });
+        } catch (error) {
+          console.error("Error marking issue as read:", error);
+        }
+      }
+    };
+
+    markAsRead();
+  }, [issue, axios]);
+
   const handleBack = () => {
     if (newsletter) {
       onBack(newsletter);
     } else {
       navigate('/'); // Fallback if no newsletter context
+    }
+  };
+
+  const handleFeedback = async (paperId: string, feedback: 'like' | 'dislike' | 'heart' | null) => {
+    try {
+      const response = await axios.put(`/papers/${paperId}/feedback`, { feedback });
+      const updatedPaper = response.data;
+      setPapers(papers.map(p => p._id === paperId ? updatedPaper : p));
+    } catch (error) {
+      console.error("Error submitting feedback:", error);
     }
   };
 
@@ -147,7 +180,7 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
             </div>
           </div>
 
-          <div className="bg-muted/30 rounded-lg p-4">
+          <div className="bg-muted/30 rounded-lg p-4 mt-8">
             <h3 className="mb-2">Introduction</h3>
             <p className="text-muted-foreground leading-relaxed">
               {issue.introduction}
@@ -162,13 +195,13 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
           <div className="text-center py-12 text-muted-foreground">No papers found for this issue.</div>
         ) : (
           <div className="space-y-6">
-            {papers.map((paper) => (
+            {papers.map((paper, index) => (
               <Card key={paper._id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
+                <CardHeader withSeparator={false}>
                   <div className="flex items-start justify-between">
                     <div className="flex-1 mr-4">
-                      <CardTitle className="text-lg leading-snug mb-2">
-                        {paper.title}
+                      <CardTitle className="text-lg leading-snug mb-2 font-bold">
+                        {`${index + 1}. ${paper.title}`}
                       </CardTitle>
                       <div className="text-sm text-muted-foreground mb-2">
                         <span>{paper.authors.join(", ")}</span>
@@ -188,15 +221,26 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <h4 className="font-semibold">Synthesis:</h4>
-                  <p className="text-sm text-muted-foreground mb-2">
+                  <h4 className="font-semibold">Synthesis</h4>
+                  <p className="text-base text-muted-foreground mb-2">
                     {paper.synthesis}
                   </p>
-                  <h4 className="font-semibold">Usefulness:</h4>
-                  <p className="text-sm text-muted-foreground">
+                  <h4 className="font-semibold">Why it matters?</h4>
+                  <p className="text-base text-muted-foreground">
                     {paper.usefulness}
                   </p>
                 </CardContent>
+                <CardFooter className="flex justify-end gap-4">
+                  <Button variant="ghost" size="icon" onClick={() => handleFeedback(paper._id, paper.feedback === 'like' ? null : 'like')}>
+                    <ThumbsUp className={`w-5 h-5 ${paper.feedback === 'like' ? 'text-blue-500' : 'text-muted-foreground'}`} fill={paper.feedback === 'like' ? 'currentColor' : 'none'} />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleFeedback(paper._id, paper.feedback === 'dislike' ? null : 'dislike')}>
+                    <ThumbsDown className={`w-5 h-5 ${paper.feedback === 'dislike' ? 'text-red-500' : 'text-muted-foreground'}`} fill={paper.feedback === 'dislike' ? 'currentColor' : 'none'} />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleFeedback(paper._id, paper.feedback === 'heart' ? null : 'heart')}>
+                    <Heart className={`w-5 h-5 ${paper.feedback === 'heart' ? 'text-pink-500' : 'text-muted-foreground'}`} fill={paper.feedback === 'heart' ? 'currentColor' : 'none'} />
+                  </Button>
+                </CardFooter>
               </Card>
             ))}
           </div>

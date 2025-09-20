@@ -51,3 +51,25 @@ exports.countPapers = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.setFeedback = async (req, res) => {
+  const { paperId } = req.params;
+  const { feedback } = req.body;
+
+  if (feedback && !['like', 'dislike', 'heart'].includes(feedback)) {
+    return res.status(400).json({ message: 'Invalid feedback value.' });
+  }
+
+  try {
+    const paper = await Paper.findById(paperId);
+    if (!paper) {
+      return res.status(404).json({ message: 'Paper not found.' });
+    }
+
+    paper.feedback = feedback;
+    await paper.save();
+    res.status(200).json(paper);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

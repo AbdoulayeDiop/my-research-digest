@@ -11,6 +11,7 @@ import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-route
 import { Footer } from "./components/Footer";
 import { useUserSync } from "./hooks/useUserSync";
 import { HelmetProvider } from 'react-helmet-async';
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 interface User {
   _id: string; // MongoDB user ID
@@ -57,8 +58,8 @@ function AppContent() {
       <main className="max-w-6xl mx-auto min-h-[calc(100vh-15rem)]">
         <Routes>
           <Route path="/" element={isAuthenticated ? <Dashboard user={syncedUser as User} onViewNewsletter={handleViewNewsletter} /> : <LandingPage onGetStarted={loginWithRedirect} onSignIn={loginWithRedirect} isAuthenticated={isAuthenticated} />} />
-          <Route path="/newsletters/:newsletterId" element={<IssuesList onBack={handleBackToNewsletters} onViewIssue={handleViewIssue} />} />
-          <Route path="/issues/:issueId" element={<IssueDetail onBack={handleBackToIssues} />} />
+          <Route path="/newsletters/:newsletterId" element={<ProtectedRoute component={IssuesList} onBack={handleBackToNewsletters} onViewIssue={handleViewIssue} />} />
+          <Route path="/issues/:issueId" element={<ProtectedRoute component={IssueDetail} onBack={handleBackToIssues} />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/admin" element={<AdminDashboard onBack={() => navigate('/')} />} />

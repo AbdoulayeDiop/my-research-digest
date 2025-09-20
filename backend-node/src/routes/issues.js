@@ -20,4 +20,7 @@ router.put('/:id', issueController.updateIssue);
 // Delete an issue
 router.delete('/:id', issueController.deleteIssue);
 
+// Toggle read status of an issue
+router.put('/:id/read', issueController.toggleReadStatus);
+
 module.exports = router;

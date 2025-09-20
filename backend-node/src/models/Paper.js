@@ -39,6 +39,11 @@ const PaperSchema = new mongoose.Schema({
   venueName: {
     type: String,
   },
+  feedback: {
+    type: String,
+    enum: ['like', 'dislike', 'heart', null],
+    default: null,
+  },
 });
 
 module.exports = mongoose.model('Paper', PaperSchema, 'papers');

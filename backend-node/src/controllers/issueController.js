@@ -139,3 +139,22 @@ exports.countIssues = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.toggleReadStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { read } = req.body; // Expecting 'read' boolean in request body
+
+    const issue = await Issue.findById(id);
+
+    if (!issue) {
+      return res.status(404).json({ message: 'Issue not found' });
+    }
+
+    issue.read = read;
+    await issue.save();
+    res.status(200).json(issue);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

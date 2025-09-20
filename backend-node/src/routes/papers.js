@@ -14,6 +14,9 @@ router.get('/byIssue/:issueId', paperController.getPapersByIssueId);
 // POST /api/papers/batch (Fetch multiple papers by their IDs)
 router.post('/batch', paperController.getPapersByIds);
 
+// PUT /api/papers/:paperId/feedback (Set feedback for a paper)
+router.put('/:paperId/feedback', paperController.setFeedback);
+
 // GET /api/papers?issueId=... (Get all papers for a specific issue - generic, should be last)
 router.get('/', paperController.getPapersByIssue);
 

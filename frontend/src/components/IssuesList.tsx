@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useLocation, useParams } from 'react-router-dom';
-import { ArrowLeft, Calendar, FileText } from "lucide-react";
+import { ArrowLeft, Calendar, FileText, CheckCircle, Circle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 
 import { useAxios } from "../lib/axios";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 interface Issue {
   _id: string;
@@ -17,6 +18,7 @@ interface Issue {
   newsletterId: string;
   newsletterTitle: string;
   paperCount: number;
+  read: boolean;
 }
 
 interface Newsletter {
@@ -69,6 +71,19 @@ export function IssuesList({ onBack, onViewIssue }: IssuesListProps) {
 
     fetchData();
   }, [newsletterId, axios, location.state]);
+
+  const handleToggleRead = async (issueId: string) => {
+    try {
+      const issueToUpdate = issues.find(i => i._id === issueId);
+      if (!issueToUpdate) return;
+      const newReadStatus = !issueToUpdate.read;
+      const response = await axios.put(`/issues/${issueId}/read`, { read: newReadStatus });
+      const updatedIssue = response.data;
+      setIssues(issues.map(i => i._id === issueId ? { ...updatedIssue, paperCount: issueToUpdate.paperCount } : i));
+    } catch (error) {
+      console.error("Error toggling read status:", error);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -140,49 +155,66 @@ export function IssuesList({ onBack, onViewIssue }: IssuesListProps) {
       </div>
 
       {/* Issues List */}
-      <div className="space-y-4">
-        <h2>All Issues</h2>
-        
-        {issues.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">No issues found for this newsletter.</div>
-        ) : (
-          <div className="space-y-4">
-              {issues.map((issue) => (
-                <Card 
-                  key={issue._id} 
-                  className="hover:shadow-lg transition-shadow cursor-pointer"
-                  onClick={() => onViewIssue(issue, newsletter)}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="flex items-center gap-2">
-                          {issue.title}
-                        </CardTitle>
-                        <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            {new Date(issue.publicationDate).toLocaleDateString()}
+      <TooltipProvider>
+        <div className="space-y-4">
+          <h2>All Issues</h2>
+          
+          {issues.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">No issues found for this newsletter.</div>
+          ) : (
+            <div className="space-y-4">
+                {issues.map((issue, index) => (
+                  <Card 
+                    key={issue._id} 
+                    className={`hover:shadow-lg transition-shadow ${!issue.read ? 'border-unread' : ''}`}>
+                    <div className="flex items-start">
+                      <div className="flex-grow cursor-pointer" onClick={() => onViewIssue(issue, newsletter as Newsletter)}>
+                        <CardHeader className="pb-3" withSeparator={false}>
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <CardTitle className="flex items-center gap-2">
+                                {issue.title}
+                              </CardTitle>
+                              <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="w-4 h-4" />
+                                  {new Date(issue.publicationDate).toLocaleDateString()}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <FileText className="w-4 h-4" />
+                                  {issue.paperCount} Papers
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                              {index === 0 && <Badge className="bg-green-500 text-white">New</Badge>}
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleToggleRead(issue._id); }}>
+                                    {issue.read ? <CheckCircle className="w-5 h-5 text-black" /> : <Circle className="w-5 h-5 text-muted-foreground" />}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {issue.read ? "Mark as unread" : "Mark as read"}
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <FileText className="w-4 h-4" />
-                            {issue.paperCount} Papers
-                          </div>
-                        </div>
+                        </CardHeader>
+                        
+                        <CardContent>
+                          <p className="text-muted-foreground">
+                            {issue.introduction}
+                          </p>
+                        </CardContent>
                       </div>
                     </div>
-                  </CardHeader>
-                  
-                  <CardContent>
-                    <p className="text-muted-foreground">
-                      {issue.introduction}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-        )}
-      </div>
+                  </Card>
+                ))}
+              </div>
+          )}
+        </div>
+      </TooltipProvider>
     </div>
   );
 }
