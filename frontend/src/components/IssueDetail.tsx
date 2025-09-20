@@ -153,9 +153,11 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
         <meta property="og:description" content={issue.introduction} />
         <meta property="og:type" content="article" />
         <meta property="og:url" content={`https://www.my-research-digest.com/issues/${issue._id}`} />
+        <meta property="og:image" content="https://my-research-digest.com/logo.png" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={`${issue.title} - My Research Digest`} />
         <meta name="twitter:description" content={issue.introduction} />
+        <meta name="twitter:image" content="https://my-research-digest.com/logo.png" />
       </Helmet>
       
       <div className="mb-8">
