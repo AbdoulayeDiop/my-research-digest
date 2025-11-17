@@ -143,8 +143,9 @@ export default function Navbar({ onGetStarted, onSignIn, onSignOut, user }: Navb
           ) : (
             <div className="flex items-center gap-2">
               <ThemeToggle />
-              <Button variant="ghost" onClick={onSignIn}>Sign In</Button>
-              <Button onClick={onGetStarted}>Sign Up</Button>
+              {/* <Button variant="ghost" onClick={onSignIn}>Sign In</Button> */}
+              {/* <Button onClick={onGetStarted}>Sign Up</Button> */}
+              <Button onClick={onSignIn}>Sign In</Button>
             </div>
           )}
         </div>
