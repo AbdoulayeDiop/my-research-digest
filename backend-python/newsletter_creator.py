@@ -50,11 +50,12 @@ class NewsletterCreator:
                 return {'newsletter': newsletter, 'papers': papers_with_analysis}
         return None
 
-    async def _filter_papers(self, topic: str, papers: List[Dict]) -> List[Dict]:
+    async def _filter_papers(self, topic: str, papers: List[Dict], description: str="") -> List[Dict]:
         async def do_filter(paper):
             chain = prompts.paper_filterer_prompt | self.llm
             response = await chain.ainvoke({
                 "topic": topic,
+                "description": description,
                 "title": paper['title'],
                 "abstract": paper['abstract']
             })
@@ -73,12 +74,13 @@ class NewsletterCreator:
             papers, results) if is_relevant == "yes"]
         return filtered_papers
 
-    async def _analyze_papers(self, topic: str, papers: List[Dict]) -> List[data_models.PaperAnalyzerOutput]:
+    async def _analyze_papers(self, topic: str, papers: List[Dict], description: str="") -> List[data_models.PaperAnalyzerOutput]:
         async def do_analysis(paper):
             chain = prompts.paper_analyzer_prompt | self.llm.with_structured_output(
                 data_models.PaperAnalyzerOutput)
             response = await chain.ainvoke({
                 "topic": topic,
+                "description": description,
                 "title": paper['title'],
                 "abstract": paper['abstract']
             })

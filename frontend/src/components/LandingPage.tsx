@@ -14,7 +14,7 @@ interface LandingPageProps {
 
 export function LandingPage({ onGetStarted, onSignIn }: LandingPageProps) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/40">
       {/* Navigation */}
       <HeroSection onGetStarted={onGetStarted} onSignIn={onSignIn} />
       <HowItWorksSection />

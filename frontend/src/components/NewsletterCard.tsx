@@ -41,11 +41,11 @@ export function NewsletterCard({ newsletter, onDelete, onView }: NewsletterCardP
         month: 'long',
         day: 'numeric',
       })
-    : 'N/A';
+    : 'No issues published yet';
 
   return (
     <Card 
-      className="h-full hover:shadow-lg transition-shadow cursor-pointer group"
+      className="h-full hover:shadow-lg transition-shadow cursor-pointer group bg-card/70"
       onClick={handleCardClick}
     >
       <CardHeader className="pb-4">
@@ -60,7 +60,7 @@ export function NewsletterCard({ newsletter, onDelete, onView }: NewsletterCardP
               </CardDescription>
             )}
             <span className="text-sm text-muted-foreground mt-2">
-              Created: {formattedCreatedAt}
+              Last issue: {formattedLastIssue}
             </span>
           </div>
         </div>
@@ -83,7 +83,7 @@ export function NewsletterCard({ newsletter, onDelete, onView }: NewsletterCardP
         
         <div className="flex items-center gap-2 text-muted-foreground">
           <Calendar className="w-4 h-4" />
-          <span>Last issue: {formattedLastIssue}</span>
+          <span>Created: {formattedCreatedAt}</span>
         </div>
       </CardContent>
       

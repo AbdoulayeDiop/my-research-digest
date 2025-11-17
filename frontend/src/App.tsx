@@ -1,4 +1,4 @@
-import { Navbar } from "./components/Navbar";
+import Navbar from "./components/Navbar";
 import { Dashboard } from "./components/Dashboard";
 import { IssuesList } from "./components/IssuesList";
 import { IssueDetail } from "./components/IssueDetail";
@@ -55,7 +55,7 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar user={syncedUser as User} onSignOut={() => logout({ logoutParams: { returnTo: window.location.origin } })} onSignIn={loginWithRedirect} onGetStarted={loginWithRedirect} />
-      <main className="max-w-6xl mx-auto min-h-[calc(100vh-15rem)]">
+      <main>
         <Routes>
           <Route path="/" element={isAuthenticated ? <Dashboard user={syncedUser as User} onViewNewsletter={handleViewNewsletter} /> : <LandingPage onGetStarted={loginWithRedirect} onSignIn={loginWithRedirect} isAuthenticated={isAuthenticated} />} />
           <Route path="/newsletters/:newsletterId" element={<ProtectedRoute component={IssuesList} onBack={handleBackToNewsletters} onViewIssue={handleViewIssue} />} />

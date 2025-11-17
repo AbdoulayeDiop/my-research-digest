@@ -35,13 +35,14 @@ exports.syncUser = async (req, res) => {
 
     if (!user) {
       // User does not exist, create a new one
-      user = new User({ auth0Id, email, name });
+      user = new User({ auth0Id, email, name, lastLoginAt: Date.now() });
       await user.save();
       isNewUser = true;
     } else {
-      // User exists, update their information
+      // User exists, update their information and last login time
       user.email = email;
       user.name = name;
+      user.lastLoginAt = Date.now(); // Update last login time
       await user.save();
     }
 
@@ -131,6 +132,49 @@ exports.getUserById = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
     res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getUsersWithNewsletterCount = async (req, res) => {
+  try {
+    const usersWithNewsletterCount = await User.aggregate([
+      {
+        $lookup: {
+          from: 'newsletters', // The collection name for newsletters
+          localField: '_id',
+          foreignField: 'userId',
+          as: 'newsletters',
+        },
+      },
+      {
+        $addFields: {
+          newsletterCount: { $size: '$newsletters' },
+        },
+      },
+      {
+        $project: {
+          newsletters: 0, // Exclude the newsletters array if not needed, keep count
+        },
+      },
+    ]);
+    res.status(200).json(usersWithNewsletterCount);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getActiveUsers = async (req, res) => {
+  try {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const activeUsers = await User.find({
+      lastLoginAt: { $gte: sevenDaysAgo }
+    }).countDocuments();
+
+    res.status(200).json({ activeUsers });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

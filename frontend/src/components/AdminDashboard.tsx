@@ -1,5 +1,16 @@
 import { useState, useEffect } from "react";
 import { useAxios } from "../lib/axios";
+import { Search } from "lucide-react"; // Added Search icon import
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "./ui/table";
+import { Button } from "./ui/button"; // Added Button import
+import { Input } from "./ui/input";
 
 interface AdminDashboardProps {
   onBack: () => void;
@@ -11,40 +22,79 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
     totalNewsletters: 0,
     totalIssues: 0,
     totalPapers: 0,
+    activeUsers: 0,
   });
+  const [usersData, setUsersData] = useState<any[]>([]);
+  const [usersCurrentPage, setUsersCurrentPage] = useState(1);
+  const [usersPerPage] = useState(10); // Number of users per page
+  const [usersSearchQuery, setUsersSearchQuery] = useState(""); // Search query for users
+  const [allNewsletters, setAllNewsletters] = useState<any[]>([]);
+  const [newslettersCurrentPage, setNewslettersCurrentPage] = useState(1);
+  const [newslettersPerPage] = useState(10); // Number of newsletters per page
+  const [newslettersSearchQuery, setNewslettersSearchQuery] = useState(""); // Search query for newsletters
+
+  // Derived state for users pagination and filtering
+  const filteredUsers = usersData.filter(user =>
+    user.name?.toLowerCase().includes(usersSearchQuery.toLowerCase()) ||
+    user.email?.toLowerCase().includes(usersSearchQuery.toLowerCase())
+  );
+  const indexOfLastUser = usersCurrentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+  const usersTotalPages = Math.ceil(filteredUsers.length / usersPerPage);
+
+  // Derived state for newsletters pagination and filtering
+  const filteredNewsletters = allNewsletters.filter(newsletter =>
+    newsletter.topic?.toLowerCase().includes(newslettersSearchQuery.toLowerCase()) ||
+    newsletter.description?.toLowerCase().includes(newslettersSearchQuery.toLowerCase()) ||
+    newsletter.field?.toLowerCase().includes(newslettersSearchQuery.toLowerCase())
+  );
+  const indexOfLastNewsletter = newslettersCurrentPage * newslettersPerPage;
+  const indexOfFirstNewsletter = indexOfLastNewsletter - newslettersPerPage;
+  const currentNewsletters = filteredNewsletters.slice(indexOfFirstNewsletter, indexOfLastNewsletter);
+  const newslettersTotalPages = Math.ceil(filteredNewsletters.length / newslettersPerPage);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const axios = useAxios();
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchData = async () => {
       try {
         setIsLoading(true);
-        // Fetch total users
-        const usersResponse = await axios.get(`/users/count`);
-        // Fetch total newsletters
-        const newslettersResponse = await axios.get(`/newsletters/count`);
-        // Fetch total issues
-        const issuesResponse = await axios.get(`/issues/count`);
-        // Fetch total papers
-        const papersResponse = await axios.get(`/papers/count`);
+        // Fetch total counts
+        const [usersCountResponse, newslettersCountResponse, issuesCountResponse, papersCountResponse, activeUsersResponse, allNewslettersResponse] = await Promise.all([
+          axios.get(`/users/count`),
+          axios.get(`/newsletters/count`),
+          axios.get(`/issues/count`),
+          axios.get(`/papers/count`),
+          axios.get(`/users/active-count`),
+          axios.get(`/newsletters`), // Fetch all newsletters
+        ]);
 
         setStats({
-          totalUsers: usersResponse.data.count,
-          totalNewsletters: newslettersResponse.data.count,
-          totalIssues: issuesResponse.data.count,
-          totalPapers: papersResponse.data.count,
+          totalUsers: usersCountResponse.data.count,
+          totalNewsletters: newslettersCountResponse.data.count,
+          totalIssues: issuesCountResponse.data.count,
+          totalPapers: papersCountResponse.data.count,
+          activeUsers: activeUsersResponse.data.activeUsers,
         });
+
+        // Fetch users with newsletter counts
+        const usersDataResponse = await axios.get(`/users/with-newsletter-count`);
+        setUsersData(usersDataResponse.data);
+
+        setAllNewsletters(allNewslettersResponse.data); // Set all newsletters
+
         setError(null);
       } catch (err) {
-        setError("Failed to fetch admin stats.");
-        console.error("Error fetching admin stats:", err);
+        setError("Failed to fetch admin data.");
+        console.error("Error fetching admin data:", err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchStats();
+    fetchData();
   }, [axios]);
 
   return (
@@ -73,6 +123,10 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
             <h3 className="text-lg font-semibold">Total Papers</h3>
             <p className="text-3xl font-bold text-primary mt-2">{stats.totalPapers}</p>
           </div>
+          <div className="bg-card rounded-lg p-4 border">
+            <h3 className="text-lg font-semibold">Active Users (last 7 days)</h3>
+            <p className="text-3xl font-bold text-primary mt-2">{stats.activeUsers}</p>
+          </div>
         </div>
       )}
 
@@ -81,6 +135,116 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
           Back to Dashboard
         </button>
       </div>
+
+      <h2 className="text-2xl font-bold mt-10 mb-4">Users Overview</h2>
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Search users by name or email..."
+          value={usersSearchQuery}
+          onChange={(e) => {
+            setUsersSearchQuery(e.target.value);
+            setUsersCurrentPage(1); // Reset to first page on search
+          }}
+          className="pl-9"
+        />
+      </div>
+      {filteredUsers.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">No users found.</div>
+      ) : (
+        <>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Newsletters</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {currentUsers.map((user) => (
+                  <TableRow key={user._id}>
+                    <TableCell className="font-medium">{user.name || 'N/A'}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{user.newsletterCount}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <div className="flex justify-end space-x-2 mt-4">
+            <Button
+              onClick={() => setUsersCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={usersCurrentPage === 1}
+            >
+              Previous
+            </Button>
+            <Button
+              onClick={() => setUsersCurrentPage((prev) => Math.min(prev + 1, usersTotalPages))}
+              disabled={usersCurrentPage === usersTotalPages}
+            >
+              Next
+            </Button>
+          </div>
+        </>
+      )}
+      <h2 className="text-2xl font-bold mt-10 mb-4">Newsletters Overview</h2>
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Search newsletters by topic, description, or field..."
+          value={newslettersSearchQuery}
+          onChange={(e) => {
+            setNewslettersSearchQuery(e.target.value);
+            setNewslettersCurrentPage(1); // Reset to first page on search
+          }}
+          className="pl-9"
+        />
+      </div>
+      {filteredNewsletters.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">No newsletters found.</div>
+      ) : (
+        <>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Topic</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Field</TableHead>
+                  <TableHead>Created At</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {currentNewsletters.map((newsletter) => (
+                  <TableRow key={newsletter._id}>
+                    <TableCell className="font-medium">{newsletter.topic}</TableCell>
+                    <TableCell>{newsletter.description || 'N/A'}</TableCell>
+                    <TableCell>{newsletter.field || 'N/A'}</TableCell>
+                    <TableCell>{new Date(newsletter.createdAt).toLocaleDateString()}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <div className="flex justify-end space-x-2 mt-4">
+            <Button
+              onClick={() => setNewslettersCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={newslettersCurrentPage === 1}
+            >
+              Previous
+            </Button>
+            <Button
+              onClick={() => setNewslettersCurrentPage((prev) => Math.min(prev + 1, newslettersTotalPages))}
+              disabled={newslettersCurrentPage === newslettersTotalPages}
+            >
+              Next
+            </Button>
+          </div>
+        </>
+      )}
+
     </div>
   );
 }

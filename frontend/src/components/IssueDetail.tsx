@@ -145,7 +145,7 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
   }
 
   return (
-    <div className="p-6">
+    <div className="max-w-6xl mx-auto p-6">
       <Helmet>
         <title>{issue.title} - My Research Digest</title>
         <meta name="description" content={issue.introduction} />

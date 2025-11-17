@@ -105,8 +105,8 @@ export function AddNewsletterDialog({ onCreate, user }: AddNewsletterDialogProps
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
+          <div className="grid gap-5 py-5">
+            <div className="grid gap-3">
               <Label htmlFor="topic">Newsletter Topic</Label>
               <Input
                 id="topic"
@@ -117,7 +117,7 @@ export function AddNewsletterDialog({ onCreate, user }: AddNewsletterDialogProps
               />
             </div>
             
-            <div className="grid gap-2">
+            <div className="grid gap-3">
               <Label htmlFor="field">Research Field (Optional)</Label>
               <Select value={formData.field || ""} onValueChange={(value) => handleInputChange("field", value)}>
                 <SelectTrigger>
@@ -141,7 +141,7 @@ export function AddNewsletterDialog({ onCreate, user }: AddNewsletterDialogProps
               </Select>
             </div>
             
-            <div className="grid gap-2">
+            <div className="grid gap-3">
               <Label htmlFor="description">Description (Optional)</Label>
               <Textarea
                 id="description"

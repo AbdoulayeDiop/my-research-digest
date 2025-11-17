@@ -57,14 +57,20 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
     }
   }, [user?.sub]);
 
-  // Filter newsletters based on search query
+  // Filter and sort newsletters based on search query
   const filteredNewsletters = useMemo(() => {
+    const sortedNewsletters = [...newsletters].sort((a, b) => {
+      const aDate = a.lastIssueDate ? new Date(a.lastIssueDate) : new Date(a.createdAt);
+      const bDate = b.lastIssueDate ? new Date(b.lastIssueDate) : new Date(b.createdAt);
+      return bDate.getTime() - aDate.getTime();
+    });
+
     if (!searchQuery.trim()) {
-      return newsletters;
+      return sortedNewsletters;
     }
 
     const query = searchQuery.toLowerCase();
-    return newsletters.filter(newsletter =>
+    return sortedNewsletters.filter(newsletter =>
       newsletter.topic.toLowerCase().includes(query) ||
       (newsletter.description && newsletter.description.toLowerCase().includes(query)) ||
       (newsletter.field && newsletter.field.toLowerCase().includes(query))
@@ -86,7 +92,7 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
   };
 
   return (
-    <div className="p-6">
+    <div className="max-w-6xl mx-auto p-6">
       {/* Header */}
       <div className="mb-8">
         {user?.name? <h1 className="mb-2">Welcome back, {user.name.split(' ')[0]}!</h1>: <h1 className="mb-2">Welcome to My Research Digest</h1>}

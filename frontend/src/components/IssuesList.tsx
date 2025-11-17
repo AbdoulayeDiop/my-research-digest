@@ -110,7 +110,7 @@ export function IssuesList({ onBack, onViewIssue }: IssuesListProps) {
   }
 
   return (
-    <div className="p-6">
+    <div className="max-w-6xl mx-auto p-6">
       {/* Header */}
       <div className="mb-8">
         <Button

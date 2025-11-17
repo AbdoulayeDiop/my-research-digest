@@ -3,14 +3,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 
 export function HowItWorksSection() {
   return (
-    <section id="how-it-works" className="container mx-auto px-6 py-20 bg-muted/30">
+    <section id="how-it-works" className="mx-auto px-6 py-20 bg-muted/30">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            How My Research Digest Works
+            The Curation Process
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            From research keywords to curated insights in three automated steps
+            From research keywords to curated insights in three automated steps.
           </p>
         </div>
 
@@ -20,15 +20,11 @@ export function HowItWorksSection() {
               <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <Search className="w-8 h-8 text-primary" />
               </div>
-              <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto mb-4 text-lg font-bold">
-                1
-              </div>
-              <CardTitle>Set Your Research Topics</CardTitle>
+              <CardTitle>1. Define Your Scope</CardTitle>
             </CardHeader>
             <CardContent>
               <CardDescription className="text-center">
-                Define your research interests with keywords and topics. 
-                Our AI will automatically search across major scientific databases.
+                Specify your research interests using keywords. Our system then automatically scans major scientific databases like arXiv and Semantic Scholar.
               </CardDescription>
             </CardContent>
           </Card>
@@ -38,15 +34,11 @@ export function HowItWorksSection() {
               <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <Database className="w-8 h-8 text-primary" />
               </div>
-              <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto mb-4 text-lg font-bold">
-                2
-              </div>
-              <CardTitle>AI Discovers & Selects</CardTitle>
+              <CardTitle>2. Automated Search & Ranking</CardTitle>
             </CardHeader>
             <CardContent>
               <CardDescription className="text-center">
-                Our AI scans arXiv, Semantic Scholar, and other major archives to find 
-                the most relevant papers, then selects the top 5 for your weekly digest.
+                The tool finds relevant papers and ranks them based on relevance, citation counts, and author h-index to select the top 5 for your weekly digest.
               </CardDescription>
             </CardContent>
           </Card>
@@ -56,15 +48,11 @@ export function HowItWorksSection() {
               <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <Mail className="w-8 h-8 text-primary" />
               </div>
-              <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto mb-4 text-lg font-bold">
-                3
-              </div>
-              <CardTitle>Receive Your Digest</CardTitle>
+              <CardTitle>3. Get Your Weekly Summary</CardTitle>
             </CardHeader>
             <CardContent>
               <CardDescription className="text-center">
-                Every week, get a comprehensive newsletter with AI-generated summaries, 
-                key insights, and direct links to the full papers.
+                Receive a weekly email with AI-generated summaries, key findings, and direct links to the full papers, keeping you informed without the noise.
               </CardDescription>
             </CardContent>
           </Card>

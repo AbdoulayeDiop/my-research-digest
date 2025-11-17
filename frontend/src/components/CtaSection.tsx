@@ -8,29 +8,24 @@ interface CtaSectionProps {
 
 export function CtaSection({ onGetStarted, onSignIn }: CtaSectionProps) {
   return (
-    <section className="container mx-auto px-6 py-20 bg-muted/30">
+    <section className="mx-auto px-6 py-20">
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="text-3xl md:text-4xl font-bold mb-6">
-          Ready to Transform Your Research Workflow?
+          Start Curating Your Field's Literature
         </h2>
         <p className="text-xl text-muted-foreground mb-8">
-          Join thousands of researchers who stay ahead of the curve with AI-powered research digests. 
-          Start your first newsletter in under 2 minutes.
+          Begin organizing your research digests today. This project is open-source, and contributions are welcome.
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button size="lg" onClick={onGetStarted} className="text-lg px-8 py-6 h-auto">
-            Create Your First Newsletter
+            Create Your First Digest
             <ArrowRight className="ml-2 w-5 h-5" />
           </Button>
           <Button variant="outline" size="lg" onClick={onSignIn} className="text-lg px-8 py-6 h-auto">
-            I Already Have an Account
+            Sign In
           </Button>
         </div>
-
-        <p className="text-sm text-muted-foreground mt-6">
-          No signup required to browse • Always free • No spam, ever
-        </p>
       </div>
     </section>
   );

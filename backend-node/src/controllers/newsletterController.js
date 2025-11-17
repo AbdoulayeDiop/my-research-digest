@@ -97,6 +97,7 @@ exports.getNewslettersByUser = async (req, res) => {
       },
       {
         $project: {
+          _id: 1,
           topic: 1,
           description: 1,
           field: 1,

@@ -26,27 +26,30 @@ newsletter_summary_prompt = PromptTemplate.from_template(
 
 paper_analyzer_prompt = PromptTemplate(
     template="""
-    You are a research assistant. Based on the following information, your task is to provide a synthesis of the paper and explain why it should matter to the user.
-    The user's topic of interest is: "{topic}"
-    The paper's title is: "{title}"
-    The paper's abstract is: "{abstract}"
+    You are a research assistant. Analyze the following newsletter and paper. Provide a synthesis of the paper and explain why it should matter to the readers of the newsletter.
+
+    Newsletter topic: "{topic}"
+    Newsletter description: "{description}"
+    
+    Paper title: "{title}"
+    Paper abstract: "{abstract}"
     """
 )
 
 paper_filterer_prompt = PromptTemplate(
     template="""
-    You are a research assistant tasked with filtering academic papers based on relevance to a specific research topic.
+    You are a research assistant. Analyze the following newsletter and paper. Determine if paper is relevant to the newsletter based on the newsletter topic and description.
 
-    USER'S RESEARCH TOPIC: "{topic}"
+    Newsletter topic: "{topic}"
+    Newsletter description: "{description}"
     
-    PAPER DETAILS:
-    Title: "{title}"
-    Abstract: "{abstract}"
+    Paper title: "{title}"
+    Paper abstract: "{abstract}"
 
     INSTRUCTIONS:
-    1. Carefully analyze the user's topic to understand the specific focus area and scope
+    1. Carefully analyze the newsletter topic and description to understand the specific focus area and scope
     2. Read the paper's title and abstract thoroughly
-    3. Determine if there is a substantial connection between the paper's content and the user's research topic
+    3. Determine if there is a substantial connection between the paper's content and the newsletter topic
 
     RELEVANCE CRITERIA:
     - HIGH RELEVANCE: Paper directly addresses the topic as a primary focus
@@ -66,10 +69,10 @@ paper_filterer_prompt = PromptTemplate(
     RESPONSE FORMAT:
     Use the following structured format:
 
-    <thinking>[Your detailed reasoning about the user topic of interest, the paper and its relevance to the topic based on the given rules]</thinking>
+    <thinking>[Your detailed reasoning/explanation about why the paper is relevant or not to the newsletter]</thinking>
     <response>[Your final decision: "yes" or "no"]</response>
 
-    Now, analyze the provided paper and determine its relevance to the user's research topic. Think step-by-step.
+    Think step-by-step.
     """
 )
 
