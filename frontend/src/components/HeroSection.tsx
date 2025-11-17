@@ -46,7 +46,7 @@ export function HeroSection({ onGetStarted, onSignIn }: HeroSectionProps) {
             <p className="text-sm font-medium">AI-Assisted Synthesis</p>
           </div>
           <div className="bg-card/50 rounded-lg p-4 border">
-            <a href="https://github.com/your-repo" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
+            <a href="https://github.com/AbdoulayeDiop/my-research-digest" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
               <Github className="w-5 h-5 text-primary mr-2" />
               <p className="text-sm font-medium">Open Source</p>
             </a>
