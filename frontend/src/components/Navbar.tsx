@@ -34,12 +34,12 @@ interface User {
 
 interface NavbarProps {
   user: User | null;
-  onGetStarted: () => void;
+  // onGetStarted: () => void;
   onSignIn: () => void;
   onSignOut: () => void;
 }
 
-export default function Navbar({ onGetStarted, onSignIn, onSignOut, user }: NavbarProps) {
+export default function Navbar({ onSignIn, onSignOut, user }: NavbarProps) {
   const navigate = useNavigate();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);

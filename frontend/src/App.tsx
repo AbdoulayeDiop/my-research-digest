@@ -54,7 +54,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar user={syncedUser as User} onSignOut={() => logout({ logoutParams: { returnTo: window.location.origin } })} onSignIn={loginWithRedirect} onGetStarted={loginWithRedirect} />
+      <Navbar user={syncedUser as User} onSignOut={() => logout({ logoutParams: { returnTo: window.location.origin } })} onSignIn={loginWithRedirect} />
       <main>
         <Routes>
           <Route path="/" element={isAuthenticated ? <Dashboard user={syncedUser as User} onViewNewsletter={handleViewNewsletter} /> : <LandingPage onGetStarted={loginWithRedirect} onSignIn={loginWithRedirect} isAuthenticated={isAuthenticated} />} />
