@@ -182,7 +182,7 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
             </div>
           </div>
 
-          <div className="bg-muted/30 rounded-lg p-4 mt-8">
+          <div className="bg-muted/30 rounded-lg p-4 mt-8 shadow-sm">
             <h3 className="mb-2">Introduction</h3>
             <p className="text-muted-foreground leading-relaxed">
               {issue.introduction}
@@ -198,7 +198,7 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
         ) : (
           <div className="space-y-6">
             {papers.map((paper, index) => (
-              <Card key={paper._id} className="hover:shadow-md transition-shadow">
+              <Card key={paper._id} className="shadow-sm hover:shadow-md transition-shadow">
                 <CardHeader withSeparator={false}>
                   <div className="flex items-start justify-between">
                     <div className="flex-1 mr-4">
@@ -249,7 +249,7 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
         )}
       </div>
 
-      <div className="mt-8 bg-muted/30 rounded-lg p-4">
+      <div className="mt-8 bg-muted/30 rounded-lg p-4 shadow-sm">
         <h3 className="mb-2">Conclusion</h3>
         <p className="text-muted-foreground leading-relaxed">
           {issue.conclusion}

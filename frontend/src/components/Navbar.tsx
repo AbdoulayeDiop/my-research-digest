@@ -70,8 +70,8 @@ export default function Navbar({ onSignIn, onSignOut, user }: NavbarProps) {
         <div className="flex items-center justify-between">
           {/* Logo and Brand */}
           <Link to="/" className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-8 h-8 bg-primary rounded-lg">
-              <BookOpen className="w-5 h-5 text-primary-foreground" />
+            <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-lg">
+              <BookOpen className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
               <h2 className="text-lg font-semibold">My Research Digest</h2>

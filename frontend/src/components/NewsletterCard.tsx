@@ -45,7 +45,7 @@ export function NewsletterCard({ newsletter, onDelete, onView }: NewsletterCardP
 
   return (
     <Card 
-      className="h-full hover:shadow-lg transition-shadow cursor-pointer group bg-card/70"
+      className="h-full shadow-md hover:shadow-lg transition-shadow cursor-pointer group bg-card/70"
       onClick={handleCardClick}
     >
       <CardHeader className="pb-4">

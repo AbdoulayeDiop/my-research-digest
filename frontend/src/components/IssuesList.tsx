@@ -166,7 +166,7 @@ export function IssuesList({ onBack, onViewIssue }: IssuesListProps) {
               {issues.map((issue, index) => (
                 <Card
                   key={issue._id}
-                  className={`hover:shadow-lg transition-shadow ${!issue.read ? 'border-unread' : ''}`}>
+                  className={`shadow-md hover:shadow-lg transition-shadow ${!issue.read ? 'border-unread' : ''}`}>
                   <div className="flex items-start">
                     <div className="flex-grow cursor-pointer" onClick={() => onViewIssue(issue, newsletter as Newsletter)}>
                       <CardHeader className="pb-3" withSeparator={false}>
@@ -187,7 +187,7 @@ export function IssuesList({ onBack, onViewIssue }: IssuesListProps) {
                             </div>
                           </div>
                           <div className="flex flex-col items-end gap-2">
-                            {index === 0 && <Badge className="bg-green-500 text-white">New</Badge>}
+                            {index === 0 && <Badge className="bg-green-500/10 border-green-500/5 text-green-500">New</Badge>}
                             <Tooltip>
                               <TooltipTrigger>
                                 <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleToggleRead(issue._id); }}>
