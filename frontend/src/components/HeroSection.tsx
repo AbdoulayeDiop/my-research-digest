@@ -9,7 +9,7 @@ interface HeroSectionProps {
 
 export function HeroSection({ onGetStarted, onSignIn }: HeroSectionProps) {
   return (
-    <section className="mx-auto px-6 py-20 ">
+    <section className="max-w-6xl mx-auto px-6 py-20 ">
       <div className="mx-auto text-center">
         <Badge variant="secondary" className="mb-6">
           <BookOpen className="w-4 h-4 mr-2" />

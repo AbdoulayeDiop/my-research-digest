@@ -65,7 +65,7 @@ export default function Navbar({ onGetStarted, onSignIn, onSignOut, user }: Navb
 
   
   return (
-    <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="max-w-6xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo and Brand */}
@@ -84,7 +84,7 @@ export default function Navbar({ onGetStarted, onSignIn, onSignOut, user }: Navb
             <div className="flex items-center gap-2">
               <ThemeToggle />
               <DropdownMenu>
-                <DropdownMenuTrigger>
+                <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar className="h-10 w-10">
                       <AvatarFallback>

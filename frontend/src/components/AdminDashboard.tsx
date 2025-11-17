@@ -98,7 +98,7 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
   }, [axios]);
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="max-w-6xl mx-auto p-6">
       <h1 className="mb-6">Admin Dashboard</h1>
 
       {isLoading ? (
