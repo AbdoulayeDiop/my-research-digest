@@ -4,6 +4,16 @@ import { Input } from "./ui/input";
 import { NewsletterCard } from "./NewsletterCard";
 import { AddNewsletterDialog } from "./AddNewsletterDialog";
 import { useAxios } from "../lib/axios";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "./ui/alert-dialog";
 
 interface Newsletter {
   _id: string; // MongoDB uses _id
@@ -32,6 +42,8 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [newsletterToDelete, setNewsletterToDelete] = useState<string | null>(null);
   const axios = useAxios();
 
   const fetchNewsletters = async () => {
@@ -81,13 +93,22 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
     setNewsletters(prev => [newNewsletter, ...prev]);
   };
 
-  const handleDeleteNewsletter = async (id: string) => {
+  const handleDeleteClick = (id: string) => {
+    setNewsletterToDelete(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!newsletterToDelete) return;
     try {
-      await axios.delete(`/newsletters/${id}`);
-      setNewsletters(prev => prev.filter(newsletter => newsletter._id !== id));
+      await axios.delete(`/newsletters/${newsletterToDelete}`);
+      setNewsletters(prev => prev.filter(newsletter => newsletter._id !== newsletterToDelete));
+      setNewsletterToDelete(null);
     } catch (err) {
       setError("Failed to delete newsletter.");
       console.error("Error deleting newsletter:", err);
+    } finally {
+      setIsDeleteDialogOpen(false);
     }
   };
 
@@ -158,7 +179,7 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
             <NewsletterCard
               key={newsletter._id}
               newsletter={newsletter}
-              onDelete={handleDeleteNewsletter}
+              onDelete={handleDeleteClick}
               onView={(newsletter) => onViewNewsletter(newsletter)}
             />
           ))}
@@ -172,6 +193,24 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
           matching "{searchQuery}"
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete this newsletter and all its issues.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
