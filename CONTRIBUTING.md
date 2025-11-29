@@ -37,7 +37,7 @@ The development environment for My Research Digest is fully containerized using 
     Run the following command to build and start all the services:
 
     ```bash
-    docker-compose -f docker-compose-dev.yml up --build
+    docker-compose -f docker-compose-dev.yml --env-file .development.env up --build
     ```
 
     The application should now be running:

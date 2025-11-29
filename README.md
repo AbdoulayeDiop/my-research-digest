@@ -68,7 +68,7 @@ The easiest way to get My Research Digest running locally is with Docker.
 
 3.  **Launch the application:**
     ```bash
-    docker-compose -f docker-compose-dev.yml up --build
+    docker-compose -f docker-compose-dev.yml --env-file .development.env up --build
     ```
 
 The application will be available at `http://localhost`. For more detailed instructions, please see our [**Contribution Guide**](./CONTRIBUTING.md).

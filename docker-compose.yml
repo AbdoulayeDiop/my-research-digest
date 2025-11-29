@@ -34,7 +34,7 @@ services:
       dockerfile: Dockerfile
     container_name: my-research-digest-backend-node
     env_file:
-      - ./.production.env
+      - .env
     depends_on:
       - mongodb
     ports:
@@ -48,7 +48,7 @@ services:
       dockerfile: Dockerfile
     container_name: my-research-digest-backend-python
     env_file:
-      - ./.production.env
+      - .env
     depends_on:
       - backend-node # backend-python needs node API backend for API calls
     networks:
@@ -79,8 +79,8 @@ services:
     volumes:
       - mongodb_data:/data/db
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=password123
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
     networks:
       - my-research-digest-network
 
