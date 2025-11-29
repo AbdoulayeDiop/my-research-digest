@@ -19,7 +19,7 @@ venv/
 
 # Docker
 *.env
-*.env.*
+*.env
 !prod.env
 
 # Logs
