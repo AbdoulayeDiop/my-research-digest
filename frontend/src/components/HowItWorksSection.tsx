@@ -57,6 +57,21 @@ export function HowItWorksSection() {
             </CardContent>
           </Card>
         </div>
+
+        <div className="text-center">
+          <p className="text-muted-foreground">
+            For a more detailed breakdown of our paper search and ranking strategy,
+            {' '}
+            <a
+              href="https://github.com/AbdoulayeDiop/my-research-digest?tab=readme-ov-file#-how-it-works-the-paper-search-and-ranking-strategy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              check out our documentation on GitHub
+            </a>.
+          </p>
+        </div>
       </div>
     </section>
   );
