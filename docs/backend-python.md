@@ -19,6 +19,26 @@ The Python script (`main.py`) runs in an infinite loop with a 24-hour sleep inte
 4.  **Create Issue and Papers**: The generated content (newsletter body and paper analyses) is posted to the Node.js backend, creating a new issue and its associated paper entries in the database.
 5.  **Send Notification**: An email is sent to the newsletter's creator to notify them that a new issue is available.
 
+### Workflow Diagram
+
+```mermaid
+graph TD
+    A[Start Daily Cycle] --> B{Fetch All Newsletters};
+    B --> C{For Each Newsletter};
+    C --> D{Issue in last 7 days?};
+    D -- Yes --> E[Skip];
+    D -- No --> F[Search Papers on Semantic Scholar];
+    F --> G[Filter with LLM];
+    G --> H[Rank by Author Score];
+    H --> I[Select Top 5 Papers];
+    I --> J[Analyze with LLM];
+    J --> K[Write Newsletter with LLM];
+    K --> L[Create Issue via Node.js API];
+    L --> M[Send Email Notification];
+    M --> N[End Cycle];
+    E --> N;
+```
+
 ## Paper Search and Ranking Strategy
 
 The core of the Python backend is its strategy for finding and ranking relevant research papers. This is a multi-stage process designed to balance relevance, quality, and authoritativeness.
