@@ -9,6 +9,7 @@ import numpy as np
 import re
 from bs4 import BeautifulSoup
 from openai import OpenAI, AsyncOpenAI
+import time
 
 def generate_queries(topic: str, description: str, model: str="gpt-5-mini") -> List[str]:
     client = OpenAI()
@@ -58,6 +59,7 @@ class NewsletterCreator:
         for query in queries:
             results.extend(semantic_searcher.search(
                 query, start_date, max_papers, end_date=end_date))
+            time.sleep(1) # Add a 1-second delay to respect API rate limits
         return results
 
     async def create_newsletter(self, topic: str, start_date: str, description: str="", nb_papers: int = 5, end_date: str = None, max_papers: int = 10) -> NewsletterWriterOutput:
