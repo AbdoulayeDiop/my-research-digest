@@ -6,7 +6,6 @@ from typing import List, Dict
 from pydantic import BaseModel
 import numpy as np
 import re
-from bs4 import BeautifulSoup
 from openai import OpenAI, AsyncOpenAI
 import time
 
@@ -22,18 +21,6 @@ def generate_queries(topic: str, description: str, model: str="gpt-5-mini") -> L
     )
     parsed_response: QueryGeneratorOutput = response.output_parsed
     return parsed_response.queries
-
-def extract_tag_beautifulsoup(response_text, tag):
-    """Extract thinking content using BeautifulSoup (more robust)"""
-    try:
-        soup = BeautifulSoup(response_text, 'html.parser')
-        element = soup.find(tag)
-        if element:
-            return element.get_text().strip()
-    except:
-        return None
-    return None
-
 
 def get_paper_score(paper: Dict) -> float:
     if paper.get("authors") is None or len(paper.get("authors")) == 0:

@@ -2,4 +2,3 @@ requests
 python-dotenv
 pydantic
 openai
-beautifulsoup4
