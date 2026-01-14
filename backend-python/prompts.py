@@ -1,80 +1,94 @@
 from langchain_core.prompts import PromptTemplate
 
-newsletter_writer_prompt = PromptTemplate(
-    template="""
-    You are a research assistant. Your task is to write a weekly newsletter about the latest research papers on '{topic}'.
-    Based on the following summaries of the selected papers, generate a title, introduction, and conclusion for this week's newsletter issue.
+newsletter_writer_prompt = """You are a research assistant. Your task is to write the weekly issue of the following scientific newsletter.
 
-    Introduction (2–3 sentences):
-    Briefly set the context: what the week’s monitoring is about.
-    Mention how many articles were selected and the general theme.
-    Example: “This week’s scientific watch highlights 3 new papers on mixed data clustering, focusing on distance measures and meta-learning approaches.”
+Newsletter topic: {topic}
+Newsletter description: {description}
 
-    Conclusion:
-    End with a short reflection or takeaway (2–3 sentences).
-    Highlight an emerging trend, a recurring theme, or your personal comment.
-    Example: “This week shows a clear trend towards combining deep learning embeddings with traditional similarity measures, bridging the gap between clustering and representation learning.”
+Here are the summaries of the selected papers for this week's issue:
+{papers_summary}
 
-    Here are the summaries of the selected papers:
-    {papers_summary}
-    """
-)
+Based on these summaries, generate a title, introduction, and conclusion for this week's newsletter issue.
 
-newsletter_summary_prompt = PromptTemplate.from_template(
-    template="Summarize in few sentences this week's issue of a newsletter about {topic}.\n\n{newsletter}"
-)
+Introduction (2–3 sentences):
+Briefly set the context: what the week’s monitoring is about.
+Mention how many articles were selected and the general theme.
+Example: “This week’s scientific watch highlights 3 new papers on mixed data clustering, focusing on distance measures and meta-learning approaches.”
 
-paper_analyzer_prompt = PromptTemplate(
-    template="""
-    You are a research assistant. Analyze the following newsletter and paper. Provide a synthesis of the paper and explain why it should matter to the readers of the newsletter.
+Conclusion:
+End with a short reflection or takeaway (2–3 sentences).
+Highlight an emerging trend, a recurring theme, or your personal comment.
+Example: “This week shows a clear trend towards combining deep learning embeddings with traditional similarity measures, bridging the gap between clustering and representation learning.”
+"""
 
-    Newsletter topic: "{topic}"
-    Newsletter description: "{description}"
-    
-    Paper title: "{title}"
-    Paper abstract: "{abstract}"
-    """
-)
+newsletter_summary_prompt = "Summarize in few sentences this week's issue of a newsletter about {topic}.\n\n{newsletter}"
 
-paper_filterer_prompt = PromptTemplate(
-    template="""
-    You are a research assistant. Analyze the following newsletter and paper. Determine if paper is relevant to the newsletter based on the newsletter topic and description.
+paper_analyzer_prompt = """You are a research assistant. Analyze the following newsletter and paper. Provide a synthesis of the paper and explain why it should matter to the readers of the newsletter.
+Newsletter topic: "{topic}"
+Newsletter description: "{description}"
 
-    Newsletter topic: "{topic}"
-    Newsletter description: "{description}"
-    
-    Paper title: "{title}"
-    Paper abstract: "{abstract}"
+Paper title: "{title}"
+Paper abstract: "{abstract}"
+"""
 
-    INSTRUCTIONS:
-    1. Carefully analyze the newsletter topic and description to understand the specific focus area and scope
-    2. Read the paper's title and abstract thoroughly
-    3. Determine if there is a substantial connection between the paper's content and the newsletter topic
+paper_filterer_prompt = """### Role
+You are an expert Research Screener specializing in academic literature classification. Your task is to determine if a specific paper is a "Must-Read" for a targeted newsletter.
 
-    RELEVANCE CRITERIA:
-    - HIGH RELEVANCE: Paper directly addresses the topic as a primary focus
-    - MEDIUM RELEVANCE: Paper touches on the topic but may not be the main focus
-    - LOW RELEVANCE: Paper has minimal connection or no connection to the topic
+### Context
+Newsletter Topic: "{topic}"
+Newsletter Description: "{description}"
 
-    DECISION RULE:
-    - Return "yes" ONLY for HIGH relevance papers
-    - Return "no" for MEDIUM and LOW relevance papers
+Paper Title: "{title}"
+Paper Abstract: "{abstract}"
 
-    EXAMPLES:
-    - Topic: "LLM Architecture" → Paper about "Attention mechanisms in transformer models" = HIGH relevance = "yes"
-    - Topic: "LLM Architecture" → Paper about "General applications of large language models with a section on architecture impact" = MEDIUM relevance = "no"
-    - Topic: "Machine Learning Security" → Paper about "Adversarial attacks on neural networks" = HIGH relevance = "yes"
-    - Topic: "Machine Learning Security" → Paper about "Basic neural network training" = LOW relevance = "no"
+### Strict Relevance Definitions
+* **HIGH (YES):** The paper’s *primary* contribution or core methodology directly advances the newsletter topic. It is a "perfect fit."
+* **MEDIUM (NO):** The paper mentions the topic or uses it as a secondary tool/application, but the main research focus lies elsewhere.
+* **LOW (NO):** The paper is unrelated or only shares broad, high-level keywords (e.g., both are "Machine Learning").
 
-    RESPONSE FORMAT:
-    Use the following structured format:
+### Filtering Logic
+1. **Analyze Focus:** What is the "Main Character" of the paper? (The core problem it solves).
+2. **Analyze Alignment:** Does the paper's "Main Character" match the Newsletter Topic?
+3. **Threshold Check:** If you have to "stretch" the connection to make it fit, classify it as MEDIUM.
 
-    <thinking>[Your detailed reasoning/explanation about why the paper is relevant or not to the newsletter]</thinking>
-    <response>[Your final decision: "yes" or "no"]</response>
+### Response Format
+You must return your response in the following format:
 
-    Think step-by-step.
-    """
-)
+reasonning: [1-2 sentences analyzing the alignment between the paper's core focus and the newsletter's scope.]
+is_relevant: [yes/no]
+"""
+
+query_generator_prompt = """<role>
+You are an expert Information Retrieval (IR) Specialist specializing in scientific literature. Your task is to generate three distinct search queries to find high-impact research papers based on a provided topic and description.
+</role>
+
+<instructions>
+1. Analyze the topic and description for key technical terms, methodologies, and synonyms.
+2. Generate exactly three queries with varying strategies:
+   - **Query 1 (Broad/Semantic):** Uses the core concept and common synonyms.
+   - **Query 2 (Technical/Specific):** Focuses on specific methodologies or niche terminology mentioned.
+   - **Query 3 (Database-Optimized):** Uses a combination of terms likely to appear in titles and abstracts of peer-reviewed journals.
+3. Queries need to be concise (5-8 words) and relevant to the topic. 
+</instructions>
+
+<examples>
+Input:
+- topic: Mixed data clustering
+- description: Papers on clustering of data with mixed numerical and categorical attributes.
+Output: 
+[
+  "mixed data clustering algorithms", 
+  "clustering datasets with heterogeneous numerical and categorical variables", 
+  "unsupervised learning for mixed-type data"
+]
+</examples>
+
+<task>
+Generate the queries for the following:
+- topic: {topic}
+- description: {description}
+</task>
+"""
 
 # if __name__ == '__main__':
 #     from dotenv import load_dotenv

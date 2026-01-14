@@ -30,8 +30,7 @@ export function BenefitsSection() {
                 <div>
                   <h3 className="font-semibold mb-2">Multi-Source Discovery</h3>
                   <p className="text-muted-foreground">
-                    Automatically searches across arXiv, Semantic Scholar, PubMed, 
-                    and other major scientific repositories.
+                    Leverages the Semantic Scholar API, which indexes billions of papers from arXiv, PubMed, and other major scientific repositories.
                   </p>
                 </div>
               </div>

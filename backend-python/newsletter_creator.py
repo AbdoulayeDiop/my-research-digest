@@ -1,13 +1,27 @@
 import prompts
-import data_models
+from data_models import RelevanceOutput, QueryGeneratorOutput, PaperAnalyzerOutput, NewsletterWriterOutput
 from paper_search import SemanticSearch
 from langchain_openai import ChatOpenAI
 import asyncio
 from typing import List, Dict
+from pydantic import BaseModel
 import numpy as np
 import re
 from bs4 import BeautifulSoup
+from openai import OpenAI, AsyncOpenAI
 
+def generate_queries(topic: str, description: str, model: str="gpt-5-mini") -> List[str]:
+    client = OpenAI()
+    response = client.responses.parse(
+        model=model,
+        input=prompts.query_generator_prompt.format(
+            topic=topic,
+            description=description
+        ),
+        text_format=QueryGeneratorOutput
+    )
+    parsed_response: QueryGeneratorOutput = response.output_parsed
+    return parsed_response.queries
 
 def extract_tag_beautifulsoup(response_text, tag):
     """Extract thinking content using BeautifulSoup (more robust)"""
@@ -30,43 +44,53 @@ def get_paper_score(paper: Dict) -> float:
 
 
 class NewsletterCreator:
-    def __init__(self, model_name: str = "gpt-4o-mini", temperature: float = 0):
-        self.searcher = SemanticSearch()
-        self.llm = ChatOpenAI(model_name=model_name, temperature=temperature)
+    def __init__(self, model: str = "gpt-5-mini", temperature: float = 0):
+        self.model = model
+        self.temperature = temperature
+        self.client = OpenAI()
 
-    async def create_newsletter(self, topic: str, start_date: str, nb_papers: int = 5, end_date: str = None, max_papers: int = 20) -> data_models.NewsletterWriterOutput:
-        papers = self.searcher.search(
-            topic, start_date, max_papers, end_date=end_date)
+    def search(self, topic, description, start_date, end_date=None, max_papers: int = 10):
+        print("Generating search queries...")
+        queries = generate_queries(topic, description, model=self.model)
+        print("Search queries generated:", queries)
+        semantic_searcher = SemanticSearch()
+        results = []
+        for query in queries:
+            results.extend(semantic_searcher.search(
+                query, start_date, max_papers, end_date=end_date))
+        return results
+
+    async def create_newsletter(self, topic: str, start_date: str, description: str="", nb_papers: int = 5, end_date: str = None, max_papers: int = 10) -> NewsletterWriterOutput:
+        print("Searching for papers...")
+        papers = self.search(topic, description=description, start_date=start_date, end_date=end_date, max_papers=max_papers)
         if papers:
-            papers = await self._filter_papers(topic, papers)
-            papers = sorted(papers, key=get_paper_score,
-                            reverse=True)[:nb_papers]
+            print(f"Found {len(papers)} papers. Filtering for relevance...")
+            papers = await self.filter_papers(topic, papers, description=description)
             if len(papers) > 0:
-                analyzes = await self._analyze_papers(topic, papers)
+                print(f"{len(papers)} papers are relevant. Analyzing papers...")
+                papers = sorted(papers, key=get_paper_score, reverse=True)[:nb_papers]
+                analyzes = await self.analyze_papers(topic, papers, description=description)
                 papers_with_analysis = [{"paper": paper, "analysis": analysis.model_dump(
                 )} for paper, analysis in zip(papers, analyzes)]
-                newsletter = self._write_newsletter(
-                    topic, papers_with_analysis)
+                newsletter = self.write_newsletter(topic, papers_with_analysis, description=description)
                 return {'newsletter': newsletter, 'papers': papers_with_analysis}
         return None
 
-    async def _filter_papers(self, topic: str, papers: List[Dict], description: str="") -> List[Dict]:
+    async def filter_papers(self, topic: str, papers: List[Dict], description: str="") -> List[Dict]:
         async def do_filter(paper):
-            chain = prompts.paper_filterer_prompt | self.llm
-            response = await chain.ainvoke({
-                "topic": topic,
-                "description": description,
-                "title": paper['title'],
-                "abstract": paper['abstract']
-            })
-            # thinking = extract_tag_beautifulsoup(response.content, 'thinking')
-            is_relevant = extract_tag_beautifulsoup(
-                response.content, 'response')
-            if is_relevant is not None:
-                return is_relevant
-            else:
-                raise ValueError(
-                    "Could not parse the response to determine relevance.")
+            response = await asyncio.to_thread(
+                self.client.responses.parse,
+                model=self.model,
+                input=prompts.paper_filterer_prompt.format(
+                    topic=topic,
+                    description=description,
+                    title=paper['title'],
+                    abstract=paper['abstract']
+                ),
+                text_format=RelevanceOutput
+            )
+            parsed_response: RelevanceOutput = response.output_parsed
+            return parsed_response.is_relevant
 
         tasks = [do_filter(paper) for paper in papers]
         results = await asyncio.gather(*tasks)
@@ -74,36 +98,44 @@ class NewsletterCreator:
             papers, results) if is_relevant == "yes"]
         return filtered_papers
 
-    async def _analyze_papers(self, topic: str, papers: List[Dict], description: str="") -> List[data_models.PaperAnalyzerOutput]:
+    async def analyze_papers(self, topic: str, papers: List[Dict], description: str="") -> List[PaperAnalyzerOutput]:
         async def do_analysis(paper):
-            chain = prompts.paper_analyzer_prompt | self.llm.with_structured_output(
-                data_models.PaperAnalyzerOutput)
-            response = await chain.ainvoke({
-                "topic": topic,
-                "description": description,
-                "title": paper['title'],
-                "abstract": paper['abstract']
-            })
-            return response
+            response = await asyncio.to_thread(
+                self.client.responses.parse,
+                model=self.model,
+                input=prompts.paper_analyzer_prompt.format(
+                    topic=topic,
+                    description=description,
+                    title=paper['title'],
+                    abstract=paper['abstract']
+                ),
+                text_format=PaperAnalyzerOutput
+            )
+            parsed_response: PaperAnalyzerOutput = response.output_parsed
+            return parsed_response
 
         tasks = [do_analysis(paper) for paper in papers]
         results = await asyncio.gather(*tasks)
         return results
 
-    def _write_newsletter(self, topic, papers_with_analysis: List[Dict]):
+    def write_newsletter(self, topic, papers_with_analysis: List[Dict], description: str="") -> Dict:
         papers_summary = ""
         for item in papers_with_analysis:
             papers_summary += f"- {item['paper']['title']}: {item['analysis']['synthesis']}\n"
 
-        chain = prompts.newsletter_writer_prompt | self.llm.with_structured_output(
-            data_models.NewsletterWriterOutput)
-        output = chain.invoke({
-            "topic": topic,
-            "papers_summary": papers_summary
-        })
-        title = output.title
-        introduction = output.introduction
-        conclusion = output.conclusion
+        response = self.client.responses.parse(
+            model=self.model,
+            input=prompts.newsletter_writer_prompt.format(
+                topic=topic,
+                description=description,
+                papers_summary=papers_summary
+            ),
+            text_format=NewsletterWriterOutput
+        )
+        parsed_response: NewsletterWriterOutput = response.output_parsed
+        title = parsed_response.title
+        introduction = parsed_response.introduction
+        conclusion = parsed_response.conclusion
 
         # Format Papers Selection
         papers_section = "## 📝 Papers Selection\n\n"
@@ -125,12 +157,14 @@ class NewsletterCreator:
         newsletter += f"## 📈 Conclusion and Trends\n\n"
         newsletter += f"{conclusion}\n"
 
-        chain = prompts.newsletter_summary_prompt | self.llm
-        response = chain.invoke({
-            "topic": topic,
-            "newsletter": newsletter
-        })
-        summary = response.content
+        response = self.client.responses.create(
+            model=self.model,
+            input=prompts.newsletter_summary_prompt.format(
+                topic=topic,
+                newsletter=newsletter
+            )
+        )
+        summary = response.output_text
 
         return {
             'title': title,
@@ -148,7 +182,7 @@ if __name__ == "__main__":
 
     async def main():
         creator = NewsletterCreator()
-        result = await creator.create_newsletter("AI applications in farming", "2025-08-31", end_date="2025-09-06", max_papers=3)
+        result = await creator.create_newsletter("new llm architectures", "2026-01-06", description="New Large Language Models with novel architecture or new innovations", end_date="2026-01-14", max_papers=10)
         if result and "newsletter" in result:
             print(result["newsletter"]["content_markdown"])
 

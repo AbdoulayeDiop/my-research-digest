@@ -24,7 +24,7 @@ export function FeaturesDeepDiveSection() {
             </CardHeader>
             <CardContent>
               <CardDescription className="text-center">
-                Continuously monitors multiple scientific databases and repositories to discover the latest publications matching your research interests.
+                Leverages the Semantic Scholar API, which indexes billions of papers across all major scientific disciplines, to discover the latest publications.
               </CardDescription>
             </CardContent>
           </Card>
@@ -34,11 +34,11 @@ export function FeaturesDeepDiveSection() {
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Brain className="w-6 h-6 text-primary" />
               </div>
-              <CardTitle>Relevance and Quality Ranking</CardTitle>
+              <CardTitle>AI-Powered Search</CardTitle>
             </CardHeader>
             <CardContent>
               <CardDescription className="text-center">
-                Leverages Semantic Scholar's relevance algorithms and author reputation metrics (citation counts, h-index) to rank and select high-quality papers.
+                Uses a Large Language Model to generate multiple, diverse search queries from your topic, ensuring a more comprehensive and relevant search.
               </CardDescription>
             </CardContent>
           </Card>
@@ -76,11 +76,11 @@ export function FeaturesDeepDiveSection() {
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Shield className="w-6 h-6 text-primary" />
               </div>
-              <CardTitle>Citation and Author Metrics</CardTitle>
+              <CardTitle>Author-Based Quality Ranking</CardTitle>
             </CardHeader>
             <CardContent>
               <CardDescription className="text-center">
-                Uses Semantic Scholar relevance ranking, author citation counts, and h-index to ensure high-quality paper selection from all sources.
+                After an initial AI-powered filtering, papers are ranked by author reputation (citation counts, h-index) to prioritize impactful research.
               </CardDescription>
             </CardContent>
           </Card>
@@ -90,11 +90,11 @@ export function FeaturesDeepDiveSection() {
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Users className="w-6 h-6 text-primary" />
               </div>
-              <CardTitle>Cross-Disciplinary Coverage</CardTitle>
+              <CardTitle>AI-Powered Relevance Filtering</CardTitle>
             </CardHeader>
             <CardContent>
               <CardDescription className="text-center">
-                Supports research across all scientific disciplines, from computer science and physics to biology, medicine, and social sciences.
+                An LLM acts as an expert screener, analyzing each paper to ensure it is a "must-read" for your specific topic, guaranteeing high relevance.
               </CardDescription>
             </CardContent>
           </Card>

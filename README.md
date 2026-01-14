@@ -12,23 +12,21 @@ My Research Digest is an open-source application designed to help researchers, s
 
 A key goal of My Research Digest is to provide a transparent and effective way to surface high-quality, relevant research. We don't just do a simple keyword search. Our process is a multi-stage pipeline designed to ensure you get the best content.
 
-### 1. Relevance-Based Search
+### 1. AI-Powered Query Generation
+-   **Method:** First, we use an LLM to generate multiple, diverse search queries based on your newsletter's topic and description.
+-   **Goal:** This ensures we cover the topic from various angles, leading to a more comprehensive and relevant set of initial results.
 
--   **Source**: We use the **Semantic Scholar API**, which employs a sophisticated two-phase search.
--   **Method**: Instead of a simple keyword match, Semantic Scholar uses a machine learning model (LightGBM) to rank papers based on the relevance of the query to the paper's title, abstract, and other metadata. This provides much more accurate and context-aware results than a traditional search.
+### 2. Relevance-Based Search
+-   **Source**: We use the **Semantic Scholar API**, which employs a sophisticated machine learning model to rank papers.
+-   **Method**: We execute searches for all the generated queries, retrieving a broad set of potentially relevant papers from a specific date range.
 
-### 2. AI-Powered Relevance Filtering
+### 3. AI-Powered Relevance Filtering
+-   **Method**: The top papers from the search are then passed to a Large Language Model.
+-   **Goal**: The LLM acts as an expert screener, reading the title and abstract of each paper to determine if it's truly a "must-read" for your topic.
 
--   **Method**: The top papers from the initial search are then passed to a Large Language Model (`gpt-4o-mini`).
--   **Goal**: The LLM reads the title and abstract of each paper to determine if it's truly relevant to the newsletter's topic, acting as a second layer of intelligent filtering.
-
-### 3. Author-Based Scoring and Ranking
-
--   **Metric**: To prioritize papers from authoritative and impactful authors, we calculate a score for each paper using the following formula:
-    ```
-    score = mean(author_citation_counts) * mean(author_h_indices)
-    ```
--   **Rationale**: This metric favors papers from researchers who are, on average, highly cited and have a high h-index. While not a perfect measure of quality, it's a strong proxy for the paper's potential significance and the credibility of the research.
+### 4. Author-Based Scoring and Ranking
+-   **Metric**: To prioritize papers from authoritative authors, we calculate a score for each paper using the formula: `score = mean(author_citation_counts) * mean(author_h_indices)`.
+-   **Rationale**: This metric favors papers from established researchers, serving as a strong proxy for the paper's potential significance.
 
 The top-ranked papers are then selected, synthesized by our AI, and compiled into your personalized newsletter.
 
@@ -46,7 +44,7 @@ For a more detailed breakdown, check out our [**full documentation on the Python
 
 -   **Frontend**: React, Vite, TypeScript, Tailwind CSS
 -   **Backend (API)**: Node.js, Express.js, MongoDB
--   **Backend (Content Generation)**: Python, LangChain, OpenAI
+-   **Backend (Content Generation)**: Python, OpenAI Python SDK
 -   **Infrastructure**: Docker, Nginx
 
 ## 🏁 Getting Started
@@ -62,13 +60,13 @@ The easiest way to get My Research Digest running locally is with Docker.
 2.  **Set up your environment:**
     Copy the example environment file:
     ```bash
-    cp backend-python/.env.example .development.env
+    cp .env.example .env
     ```
-    Then, open `.development.env` and add your credentials (e.g., for Auth0 and OpenAI).
+    Then, open `.env` and add your credentials (e.g., for Auth0 and OpenAI).
 
 3.  **Launch the application:**
     ```bash
-    docker-compose -f docker-compose-dev.yml --env-file .development.env up --build
+    docker-compose -f docker-compose-dev.yml up --build
     ```
 
 The application will be available at `http://localhost`. For more detailed instructions, please see our [**Contribution Guide**](./CONTRIBUTING.md).
