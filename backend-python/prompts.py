@@ -1,5 +1,3 @@
-from langchain_core.prompts import PromptTemplate
-
 newsletter_writer_prompt = """You are a research assistant. Your task is to write the weekly issue of the following scientific newsletter.
 
 Newsletter topic: {topic}
@@ -68,7 +66,7 @@ You are an expert Information Retrieval (IR) Specialist specializing in scientif
    - **Query 1 (Broad/Semantic):** Uses the core concept and common synonyms.
    - **Query 2 (Technical/Specific):** Focuses on specific methodologies or niche terminology mentioned.
    - **Query 3 (Database-Optimized):** Uses a combination of terms likely to appear in titles and abstracts of peer-reviewed journals.
-3. Queries need to be concise (5-8 words) and relevant to the topic. 
+3. Queries need to be concise (5-8 words) and relevant to the topic.
 </instructions>
 
 <examples>
@@ -89,22 +87,3 @@ Generate the queries for the following:
 - description: {description}
 </task>
 """
-
-# if __name__ == '__main__':
-#     from dotenv import load_dotenv
-#     from langchain_openai import ChatOpenAI
-#     from data_models import PaperFiltererOutput
-#     load_dotenv()
-#     topic = "LLMs Architecture"
-#     title = "Attention is All You Need"
-#     abstract= """
-#     The dominant sequence transduction models are based on complex recurrent or convolutional neural networks in an encoder-decoder configuration. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train. Our model achieves 28.4 BLEU on the WMT 2014 English-to-German translation task, improving over the existing best results, including ensembles by over 2 BLEU. On the WMT 2014 English-to-French translation task, our model establishes a new single-model state-of-the-art BLEU score of 41.8 after training for 3.5 days on eight GPUs, a small fraction of the training costs of the best models from the literature. We show that the Transformer generalizes well to other tasks by applying it successfully to English constituency parsing both with large and limited training data.
-#     """
-#     llm = ChatOpenAI(temperature=0, model_name="gpt-4o-mini")
-#     chain = paper_filterer_prompt | llm.with_structured_output(PaperFiltererOutput)
-#     response = chain.invoke({
-#         "topic": topic,
-#         "title": title,
-#         "abstract": abstract
-#     })
-#     print("response:", response.is_relevant)

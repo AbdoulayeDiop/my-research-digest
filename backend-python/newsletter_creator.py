@@ -1,7 +1,6 @@
 import prompts
 from data_models import RelevanceOutput, QueryGeneratorOutput, PaperAnalyzerOutput, NewsletterWriterOutput
 from paper_search import SemanticSearch
-from langchain_openai import ChatOpenAI
 import asyncio
 from typing import List, Dict
 from pydantic import BaseModel
