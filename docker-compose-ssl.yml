@@ -6,13 +6,27 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
     depends_on:
       - backend-node
       - backend-python
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $!; nginx -s reload; done & nginx -g \"daemon off;\"'" # Keep Nginx running and reload for certs
     networks:
       - my-research-digest-network
-    restart: unless-stopped
+
+  certbot:
+    image: certbot/certbot
+    container_name: my-research-digest-certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    depends_on:
+      - nginx
+    command: "certonly --webroot -w /var/www/certbot --force-renewal --email contact@my-research-digest.com --agree-tos --no-eff-email -d my-research-digest.com -d www.my-research-digest.com"
+    networks:
+      - my-research-digest-network
 
   backend-node:
     build:
@@ -23,9 +37,10 @@ services:
       - .env
     depends_on:
       - mongodb
+    ports:
+      - "5000:5000"
     networks:
       - my-research-digest-network
-    restart: unless-stopped
 
   backend-python:
     build:
@@ -38,7 +53,6 @@ services:
       - backend-node # backend-python needs node API backend for API calls
     networks:
       - my-research-digest-network
-    restart: unless-stopped
 
   frontend:
     build:
@@ -56,13 +70,12 @@ services:
       - backend-node # Frontend needs backend for API calls
     networks:
       - my-research-digest-network
-    restart: unless-stopped
 
   mongodb:
     image: mongo:latest
     container_name: my-research-digest-mongodb
-    expose:
-      - "27017"
+    ports:
+      - "27017:27017"
     volumes:
       - mongodb_data:/data/db
     environment:
@@ -70,7 +83,6 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
     networks:
       - my-research-digest-network
-    restart: unless-stopped
 
 volumes:
   mongodb_data:
