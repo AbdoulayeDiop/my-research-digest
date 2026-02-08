@@ -113,7 +113,7 @@ export function AddNewsletterDialog({ onCreate, user }: AddNewsletterDialogProps
               <AlertDescription className="text-xs text-muted-foreground mt-1 italic">
                 <ul className="list-disc pl-4 space-y-1">
                   <li><strong>Be Specific:</strong> Use clear and specific terms for your <strong>Topic</strong> to form the foundation of the search.</li>
-                  <li><strong>Add a Description:</strong> A detailed <strong>Description</strong> is crucial. It helps the AI refine search queries and ensure the relevance of the papers selected.</li>
+                  <li><strong>Add a Description:</strong> A short, high-level description helps the AI better understand your intent and return more relevant results. Keep it concise to avoid narrowing the search too much.</li>
                   <li><strong>Refine Regularly:</strong> Adjust your topic and description if the papers aren't relevant to your needs.</li>
                 </ul>
               </AlertDescription>
