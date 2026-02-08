@@ -57,6 +57,21 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [error, setError] = useState<string | null>(null);
   const axios = useAxios();
 
+  const formatRelativeTime = (dateString: string) => {
+    if (!dateString) return 'Never';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return `${diffInSeconds}s ago`;
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${diffInDays}d ago`;
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -68,7 +83,7 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
           axios.get(`/issues/count`),
           axios.get(`/papers/count`),
           axios.get(`/users/active-count`),
-          axios.get(`/newsletters`), // Fetch all newsletters
+          axios.get(`/newsletters/all`), // Fetch all newsletters using the admin route
         ]);
 
         setStats({
@@ -160,6 +175,7 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Newsletters</TableHead>
+                  <TableHead>Last Activity</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -168,6 +184,7 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
                     <TableCell className="font-medium">{user.name || 'N/A'}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{user.newsletterCount}</TableCell>
+                    <TableCell>{formatRelativeTime(user.lastLoginAt)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -211,7 +228,8 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
               <TableHeader>
                 <TableRow>
                   <TableHead>Topic</TableHead>
-                  <TableHead>Description</TableHead>
+                  <TableHead>Creator</TableHead>
+                  <TableHead>Issues</TableHead>
                   <TableHead>Field</TableHead>
                   <TableHead>Created At</TableHead>
                 </TableRow>
@@ -220,7 +238,8 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
                 {currentNewsletters.map((newsletter) => (
                   <TableRow key={newsletter._id}>
                     <TableCell className="font-medium">{newsletter.topic}</TableCell>
-                    <TableCell>{newsletter.description || 'N/A'}</TableCell>
+                    <TableCell>{newsletter.creatorName || 'N/A'}</TableCell>
+                    <TableCell>{newsletter.issueCount}</TableCell>
                     <TableCell>{newsletter.field || 'N/A'}</TableCell>
                     <TableCell>{new Date(newsletter.createdAt).toLocaleDateString()}</TableCell>
                   </TableRow>

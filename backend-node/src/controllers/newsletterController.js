@@ -118,7 +118,36 @@ exports.getAuthenticatedUserNewsletters = async (req, res) => {
 // Get all newsletters (admin only or backend)
 exports.getAllNewsletters = async (req, res) => {
   try {
-    const newsletters = await Newsletter.find();
+    const newsletters = await Newsletter.aggregate([
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'userDetails',
+        },
+      },
+      {
+        $lookup: {
+          from: 'issues',
+          localField: '_id',
+          foreignField: 'newsletterId',
+          as: 'issues',
+        },
+      },
+      {
+        $addFields: {
+          creatorName: { $arrayElemAt: ['$userDetails.name', 0] },
+          issueCount: { $size: '$issues' },
+        },
+      },
+      {
+        $project: {
+          userDetails: 0,
+          issues: 0,
+        },
+      },
+    ]);
     res.json(newsletters);
   } catch (error) {
     res.status(500).json({ message: error.message });
