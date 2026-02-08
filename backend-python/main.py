@@ -197,10 +197,9 @@ async def process_newsletter(api_client, newsletter):
             <p>Your latest My Research Digest issue on topic <strong>{newsletter.get('topic')}</strong> is ready! We've summarized the latest papers for you below.</p>
             <hr>
             <h1>{created_issue.get('title')}</h1>
-            <div>{created_issue.get('introduction').replace('\n', '<br>')}</div>
             
-            <h2>Summary</h2>
-            <p>{created_issue.get('summary').replace('\n', '<br>')}</p>
+            <h2>Introduction</h2>
+            <div>{created_issue.get('introduction').replace('\n', '<br>')}</div>
             
             <h2>Featured Research Papers</h2>
             {papers_html}

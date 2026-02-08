@@ -17,7 +17,7 @@ router.post('/batch', paperController.getPapersByIds);
 // PUT /api/papers/:paperId/feedback (Set feedback for a paper)
 router.put('/:paperId/feedback', paperController.setFeedback);
 
-// GET /api/papers?issueId=... (Get all papers for a specific issue - generic, should be last)
-router.get('/', paperController.getPapersByIssue);
+// GET /api/papers (Get all papers for the authenticated user)
+router.get('/', paperController.getPapersForAuthenticatedUser);
 
 module.exports = router;

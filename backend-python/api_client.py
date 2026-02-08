@@ -75,7 +75,7 @@ class ApiClient:
             return None
         headers = {'Authorization': f'Bearer {token}'}
         try:
-            response = self.session.get(f"{self.base_url}/newsletters", headers=headers)
+            response = self.session.get(f"{self.base_url}/newsletters/all", headers=headers)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
@@ -89,7 +89,7 @@ class ApiClient:
             return None
         headers = {'Authorization': f'Bearer {token}'}
         try:
-            response = self.session.get(f"{self.base_url}/newsletters/{newsletter_id}/issues?limit=1&sort=-publicationDate", headers=headers)
+            response = self.session.get(f"{self.base_url}/issues/byNewsletterId/{newsletter_id}?limit=1&sort=-publicationDate", headers=headers)
             response.raise_for_status()
             issues = response.json()
             return issues[0] if issues else None
@@ -125,8 +125,12 @@ class ApiClient:
         if not token:
             return None
         headers = {'Authorization': f'Bearer {token}'}
+        
+        # Add newsletter_id to issue_data
+        issue_data['newsletterId'] = newsletter_id
+        
         try:
-            response = self.session.post(f"{self.base_url}/newsletters/{newsletter_id}/issues", json=issue_data, headers=headers)
+            response = self.session.post(f"{self.base_url}/issues", json=issue_data, headers=headers)
             response.raise_for_status()
             logging.info(f"Successfully created issue for newsletter {newsletter_id}")
             return response.json()

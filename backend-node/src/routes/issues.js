@@ -1,15 +1,19 @@
 const express = require('express');
-const router = express.Router({ mergeParams: true }); // mergeParams to access newsletterId from parent route
+const router = express.Router();
 const issueController = require('../controllers/issueController');
+const adminOrBackendCheck = require('../middleware/adminMiddleware');
 
-// Create a new issue for a newsletter
-router.post('/', issueController.createIssue);
+// Get all issues for the authenticated user
+router.get('/', issueController.getIssuesForAuthenticatedUser);
 
-// Get count of all issues (admin only)
-router.get('/count', issueController.countIssues);
+// Get count of all issues
+router.get('/count', adminOrBackendCheck, issueController.countIssues);
 
 // Get all issues for a specific newsletter
-router.get('/', issueController.getIssuesByNewsletter);
+router.get('/byNewsletterId/:newsletterId', issueController.getIssuesForNewsletter);
+
+// Create a new issue
+router.post('/', issueController.createIssue);
 
 // Get a single issue by ID
 router.get('/:id', issueController.getIssueById);

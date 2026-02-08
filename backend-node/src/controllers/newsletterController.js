@@ -21,10 +21,17 @@ const transporter = nodemailer.createTransport({
 // Create a new newsletter
 exports.createNewsletter = async (req, res) => {
   try {
-    const { topic, description, field, userId: auth0Id, userEmail: email, userName: name } = req.body;
+    if (!req.auth || !req.auth.payload || !req.auth.payload.sub) {
+      return res.status(401).json({ message: 'Unauthorized: User not authenticated.' });
+    }
+    const auth0Id = req.auth.payload.sub;
+
+    const { topic, description, field } = req.body;
+    
+    // Fetch user details from Auth0 or create if not exists
     const user = await User.findOneAndUpdate(
       { auth0Id },
-      { $set: { email, name } },
+      { $set: { email: req.auth.payload.email, name: req.auth.payload.name } }, // Assuming email/name are in JWT
       { new: true, upsert: true }
     );
     const newNewsletter = new Newsletter({ userId: user._id, topic, description, field });
@@ -33,10 +40,10 @@ exports.createNewsletter = async (req, res) => {
     // Send confirmation email
     const mailOptions = {
       from: `"My Research Digest" <${process.env.SMTP_USER}>`,
-      to: email,
+      to: user.email,
       subject: `Confirmation: Your Newsletter on ${topic} Has Been Created!`,
       html: `
-        <p>Dear ${name},</p>
+        <p>Dear ${user.name},</p>
         <p>Thank you for creating a new newsletter on the topic of <strong>${topic}</strong>!</p>
         <p>Your first AI-powered research digest for this topic will be generated and sent to your inbox within the next 24 hours.</p>
         <p>You can view and manage your newsletters here:</p>
@@ -60,20 +67,13 @@ exports.createNewsletter = async (req, res) => {
   }
 };
 
-// Get all newsletters
-exports.getAllNewsletters = async (req, res) => {
+// Get all newsletters for the authenticated user
+exports.getAuthenticatedUserNewsletters = async (req, res) => {
   try {
-    const newsletters = await Newsletter.find();
-    res.json(newsletters);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// Get all newsletters for a user
-exports.getNewslettersByUser = async (req, res) => {
-  try {
-    const { userId: auth0Id } = req.body;
+    if (!req.auth || !req.auth.payload || !req.auth.payload.sub) {
+      return res.status(401).json({ message: 'Unauthorized: User not authenticated.' });
+    }
+    const auth0Id = req.auth.payload.sub;
     const user = await User.findOne({ auth0Id });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -109,6 +109,16 @@ exports.getNewslettersByUser = async (req, res) => {
       },
     ]);
 
+    res.json(newsletters);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get all newsletters (admin only or backend)
+exports.getAllNewsletters = async (req, res) => {
+  try {
+    const newsletters = await Newsletter.find();
     res.json(newsletters);
   } catch (error) {
     res.status(500).json({ message: error.message });

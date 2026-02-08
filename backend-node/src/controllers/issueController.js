@@ -6,8 +6,7 @@ const User = require('../models/User');
 // Create a new issue for a newsletter
 exports.createIssue = async (req, res) => {
   try {
-    const { newsletterId } = req.params; // Get newsletterId from URL params
-    const { title, publicationDate, summary, introduction, conclusion, contentMarkdown, status } = req.body; // Removed 'papers' from destructuring
+    const { newsletterId, title, publicationDate, summary, introduction, conclusion, contentMarkdown, status } = req.body; // Get newsletterId from body
 
     // Verify that the newsletter exists
     const newsletter = await Newsletter.findById(newsletterId);
@@ -33,7 +32,7 @@ exports.createIssue = async (req, res) => {
 };
 
 // Get all issues for a specific newsletter with paper count
-exports.getIssuesByNewsletter = async (req, res) => {
+exports.getIssuesForNewsletter = async (req, res) => {
   try {
     // Ensure user is authenticated
     if (!req.auth || !req.auth.payload || !req.auth.payload.sub) {
@@ -81,6 +80,54 @@ exports.getIssuesByNewsletter = async (req, res) => {
     res.status(200).json(issues);
   } catch (error) {
     console.error("Error in getIssuesByNewsletter:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get all issues for the authenticated user
+exports.getIssuesForAuthenticatedUser = async (req, res) => {
+  try {
+    if (!req.auth || !req.auth.payload || !req.auth.payload.sub) {
+      return res.status(401).json({ message: 'Unauthorized: User not authenticated.' });
+    }
+    const auth0Id = req.auth.payload.sub;
+
+    const user = await User.findOne({ auth0Id });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const newsletters = await Newsletter.find({ userId: user._id });
+    const newsletterIds = newsletters.map(nl => nl._id);
+
+    const issues = await Issue.aggregate([
+      { $match: { newsletterId: { $in: newsletterIds } } },
+      {
+        $lookup: {
+          from: 'papers', // The name of the papers collection
+          localField: '_id',
+          foreignField: 'issueId',
+          as: 'papersInfo',
+        },
+      },
+      {
+        $addFields: {
+          paperCount: { $size: '$papersInfo' },
+          read: { $in: [user._id, { $ifNull: ['$readBy', []] }] }
+        },
+      },
+      {
+        $project: {
+          papersInfo: 0,
+          readBy: 0
+        },
+      },
+      { $sort: { publicationDate: -1 } },
+    ]);
+
+    res.status(200).json(issues);
+  } catch (error) {
+    console.error("Error in getIssuesForAuthenticatedUser:", error);
     res.status(500).json({ message: error.message });
   }
 };

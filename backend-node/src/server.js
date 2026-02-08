@@ -33,7 +33,6 @@ mongoose.connect(MONGODB_URI)
 app.use('/api/public/issues', publicRoutes); // Public route for actions like marking as read from email
 
 app.use('/api/newsletters', jwtCheck, newsletterRoutes);
-app.use('/api/newsletters/:newsletterId/issues', jwtCheck, issueRoutes); // For newsletter-specific issue operations
 app.use('/api/issues', jwtCheck, issueRoutes); // For general issue operations (like count)
 app.use('/api/papers', jwtCheck, paperRoutes);
 app.use('/api/users', jwtCheck, userRoutes);

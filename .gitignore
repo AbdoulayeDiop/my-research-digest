@@ -42,3 +42,4 @@ dist/
 
 # Others
 google_oauth_client
+nginx.conf

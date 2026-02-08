@@ -1,4 +1,35 @@
 const Paper = require('../models/Paper');
+const User = require('../models/User');
+const Newsletter = require('../models/Newsletter');
+const Issue = require('../models/Issue');
+
+// Get all papers for the authenticated user
+exports.getPapersForAuthenticatedUser = async (req, res) => {
+  try {
+    if (!req.auth || !req.auth.payload || !req.auth.payload.sub) {
+      return res.status(401).json({ message: 'Unauthorized: User not authenticated.' });
+    }
+    const auth0Id = req.auth.payload.sub;
+
+    const user = await User.findOne({ auth0Id });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const newsletters = await Newsletter.find({ userId: user._id });
+    const newsletterIds = newsletters.map(nl => nl._id);
+
+    const issues = await Issue.find({ newsletterId: { $in: newsletterIds } });
+    const issueIds = issues.map(issue => issue._id);
+
+    const papers = await Paper.find({ issueId: { $in: issueIds } }).sort({ publicationDate: -1 });
+
+    res.status(200).json(papers);
+  } catch (error) {
+    console.error("Error in getPapersForAuthenticatedUser:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
 
 // Get all papers for a specific issue
 exports.getPapersByIssue = async (req, res) => {

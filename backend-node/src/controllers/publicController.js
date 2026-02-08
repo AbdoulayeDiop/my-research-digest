@@ -6,9 +6,10 @@ exports.markAsReadFromEmail = async (req, res) => {
     const { issueId } = req.params;
     const { userId, signature } = req.query;
     const secret = process.env.URL_SIGNATURE_SECRET;
+    const appDomain = process.env.APP_DOMAIN || process.env.FRONTEND_URL || 'http://localhost';
 
     if (!userId || !signature || !secret) {
-      return res.status(400).send('<html><body><h1>Bad Request</h1><p>Missing required parameters.</p></body></html>');
+      return res.redirect(`${appDomain}/status/error`);
     }
 
     // Verify signature
@@ -18,10 +19,9 @@ exports.markAsReadFromEmail = async (req, res) => {
     // Use a constant-time comparison to prevent timing attacks
     if (signature.length === expectedSignature.length && crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
       // Signature is valid, update the issue
-      // Using findById and save could be slightly slower but ensures the issue exists
       const issue = await Issue.findById(issueId);
       if (!issue) {
-        return res.status(404).send('<html><body><h1>Issue not found</h1></body></html>');
+        return res.redirect(`${appDomain}/status/error`);
       }
       
       // Add user to readBy array if not already present
@@ -30,17 +30,17 @@ exports.markAsReadFromEmail = async (req, res) => {
         await issue.save();
       }
 
-      // Redirect to the issue page
-      const issueUrl = `${process.env.APP_DOMAIN}/issues/${issueId}`;
-      return res.redirect(302, issueUrl);
+      // Redirect to the success page
+      return res.redirect(`${appDomain}/status/success`);
 
     } else {
       // Signature is invalid
-      return res.status(403).send('<html><body><h1>Forbidden</h1><p>Invalid signature.</p></body></html>');
+      return res.redirect(`${appDomain}/status/forbidden`);
     }
 
   } catch (error) {
     console.error('Error marking issue as read from email:', error);
-    res.status(500).send('<html><body><h1>Error</h1><p>An unexpected error occurred.</p></body></html>');
+    const appDomain = process.env.APP_DOMAIN || process.env.FRONTEND_URL || 'http://localhost';
+    res.redirect(`${appDomain}/status/error`);
   }
 };

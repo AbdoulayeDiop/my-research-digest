@@ -50,7 +50,8 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
     if (!user?.sub) return;
     try {
       setIsLoading(true);
-      const response = await axios.post('/newsletters/user', { userId: user.sub });
+      // Change from POST to GET and remove userId from body
+      const response = await axios.get('/newsletters');
       setNewsletters(response.data);
       setError(null);
     } catch (err) {

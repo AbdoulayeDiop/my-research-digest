@@ -58,7 +58,7 @@ export function IssuesList({ onBack, onViewIssue }: IssuesListProps) {
         }
 
         if (currentNewsletter) {
-          const issuesResponse = await axios.get(`/newsletters/${currentNewsletter._id}/issues`);
+          const issuesResponse = await axios.get(`/issues/byNewsletterId/${currentNewsletter._id}`);
           setIssues(issuesResponse.data);
         }
       } catch (err) {
