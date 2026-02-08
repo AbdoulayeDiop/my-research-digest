@@ -112,10 +112,9 @@ export function AddNewsletterDialog({ onCreate, user }: AddNewsletterDialogProps
               <AlertTitle className="text-sm font-medium">Tips for better results:</AlertTitle>
               <AlertDescription className="text-xs text-muted-foreground mt-1 italic">
                 <ul className="list-disc pl-4 space-y-1">
-                  <li><strong>Be Specific with your Topic:</strong> The <strong>Topic</strong> forms the foundation of the search. Use clear and specific terms.</li>
-                  <li><strong>Leverage the Description:</strong> A detailed <strong>Description</strong> is crucial. It helps the AI refine search queries and filter for truly relevant papers. Without it, your topic alone might yield irrelevant results, even if the total number of papers is limited to 5.</li>
-                  <li><strong>Select Research Field:</strong> Choosing a research field, while optional, can further help categorize and provide context for the AI.</li>
-                  <li><strong>Refine Regularly:</strong> If you find the papers irrelevant, try adjusting your topic and description to be more precise.</li>
+                  <li><strong>Be Specific:</strong> Use clear and specific terms for your <strong>Topic</strong> to form the foundation of the search.</li>
+                  <li><strong>Add a Description:</strong> A detailed <strong>Description</strong> is crucial. It helps the AI refine search queries and ensure the relevance of the papers selected.</li>
+                  <li><strong>Refine Regularly:</strong> Adjust your topic and description if the papers aren't relevant to your needs.</li>
                 </ul>
               </AlertDescription>
             </Alert>
