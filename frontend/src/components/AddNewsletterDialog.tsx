@@ -129,6 +129,7 @@ export function AddNewsletterDialog({ onCreate, user }: AddNewsletterDialogProps
                 onChange={(e) => handleInputChange("topic", e.target.value)}
                 placeholder="e.g., Mixed Data Clustering"
                 required
+                className="placeholder:text-foreground/60"
               />
             </div>
 
@@ -140,6 +141,7 @@ export function AddNewsletterDialog({ onCreate, user }: AddNewsletterDialogProps
                 onChange={(e) => handleInputChange("description", e.target.value)}
                 placeholder="Brief description of what this newsletter will cover..."
                 rows={3}
+                className="placeholder:text-foreground/60"
               />
             </div>
             
