@@ -69,14 +69,28 @@ async def process_newsletter(api_client, newsletter):
     logging.info(f"Processing newsletter: {newsletter.get('topic', 'N/A')}")
 
     last_search = newsletter.get('lastSearch')
+    
+    # If lastSearch is missing, try to get the date from the latest issue
+    if not last_search:
+        latest_issue = api_client.get_latest_issue(newsletter['_id'])
+        if latest_issue:
+            last_search = latest_issue.get('publicationDate') or latest_issue.get('createdAt')
+            logging.info(f"Using latest issue date as last search date: {last_search}")
+        else:
+            logging.info(f"No previous search or issues found for newsletter '{newsletter.get('topic')}'. Proceeding to search.")
+
     if last_search:
-        # Assuming lastSearch is in ISO format
-        last_search_date = datetime.fromisoformat(
-            last_search.replace('Z', '+00:00'))
-        if datetime.now(last_search_date.tzinfo) - last_search_date < timedelta(days=7):
-            logging.info(
-                f"Newsletter '{newsletter['topic']}' was searched recently. Skipping.")
-            return
+        # Assuming lastSearch/date is in ISO format
+        try:
+            last_search_date = datetime.fromisoformat(
+                last_search.replace('Z', '+00:00'))
+            if datetime.now(last_search_date.tzinfo) - last_search_date < timedelta(days=7):
+                logging.info(
+                    f"Newsletter '{newsletter['topic']}' was processed recently (based on last search or latest issue). Skipping.")
+                return
+        except (ValueError, TypeError) as e:
+            logging.error(f"Error parsing date '{last_search}' for newsletter {newsletter.get('topic')}: {e}")
+            # If date is unparseable, we continue processing to be safe
 
     logging.info(
         f"Searching for new papers for newsletter '{newsletter['topic']}'...")
