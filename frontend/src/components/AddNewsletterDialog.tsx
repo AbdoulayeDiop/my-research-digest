@@ -120,31 +120,28 @@ export function AddNewsletterDialog({ onCreate, user }: AddNewsletterDialogProps
             </Alert>
           </div>
           
-          <div className="grid gap-5 py-5">
-            <div className="grid gap-3">
-              <Label htmlFor="topic">Newsletter Topic</Label>
-              <Input
-                id="topic"
-                value={formData.topic}
-                onChange={(e) => handleInputChange("topic", e.target.value)}
-                placeholder="e.g., Mixed Data Clustering"
-                required
-                className="placeholder:text-foreground/60 !bg-muted/40"
-              />
-            </div>
-
-            <div className="grid gap-3">
-              <Label htmlFor="description">Description (Optional)</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => handleInputChange("description", e.target.value)}
-                placeholder="Brief description of what this newsletter will cover..."
-                rows={3}
-                className="placeholder:text-foreground/60 !bg-muted/40"
-              />
-            </div>
-            
+                      <div className="grid gap-5 py-5">
+                      <div className="grid gap-3">
+                        <Label htmlFor="topic">Newsletter Topic</Label>
+                        <Input
+                          id="topic"
+                          value={formData.topic}
+                          onChange={(e) => handleInputChange("topic", e.target.value)}
+                          placeholder="e.g., Mixed Data Clustering"
+                          required
+                        />
+                      </div>
+          
+                      <div className="grid gap-3">
+                        <Label htmlFor="description">Description (Optional)</Label>
+                        <Textarea
+                          id="description"
+                          value={formData.description}
+                          onChange={(e) => handleInputChange("description", e.target.value)}
+                          placeholder="Brief description of what this newsletter will cover..."
+                          rows={3}
+                        />
+                      </div>            
             <div className="grid gap-3">
               <Label htmlFor="field">Research Field (Optional)</Label>
               <Select value={formData.field || ""} onValueChange={(value) => handleInputChange("field", value)}>
