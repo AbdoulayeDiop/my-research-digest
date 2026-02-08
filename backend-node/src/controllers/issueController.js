@@ -39,11 +39,18 @@ exports.getIssuesForNewsletter = async (req, res) => {
       return res.status(401).json({ message: 'Unauthorized: User not authenticated.' });
     }
     const { newsletterId } = req.params;
+    const { limit, sort } = req.query; // Added limit and sort back since Python backend uses them
     const auth0Id = req.auth.payload.sub;
 
-    const user = await User.findOne({ auth0Id });
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    const pythonClientId = process.env.AUTH0_PYTHON_CLIENT_ID;
+    const isPythonBackend = pythonClientId && auth0Id && (auth0Id === pythonClientId || auth0Id === `${pythonClientId}@clients`);
+
+    let user = null;
+    if (!isPythonBackend) {
+      user = await User.findOne({ auth0Id });
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
     }
 
     // Verify that the newsletter exists
@@ -52,11 +59,11 @@ exports.getIssuesForNewsletter = async (req, res) => {
       return res.status(404).json({ message: 'Newsletter not found' });
     }
 
-    const issues = await Issue.aggregate([
+    const pipeline = [
       { $match: { newsletterId: newsletter._id } },
       {
         $lookup: {
-          from: 'papers', // The name of the papers collection
+          from: 'papers',
           localField: '_id',
           foreignField: 'issueId',
           as: 'papersInfo',
@@ -65,21 +72,36 @@ exports.getIssuesForNewsletter = async (req, res) => {
       {
         $addFields: {
           paperCount: { $size: '$papersInfo' },
-          read: { $in: [user._id, { $ifNull: ['$readBy', []] }] } // Check if user's ID is in readBy array
+          read: isPythonBackend ? false : { $in: [user._id, { $ifNull: ['$readBy', []] }] }
         },
       },
       {
         $project: {
-          papersInfo: 0, // Exclude the full papersInfo array
-          readBy: 0 // Exclude the readBy array from the final output
+          papersInfo: 0,
+          readBy: 0
         },
       },
-      { $sort: { publicationDate: -1 } },
-    ]);
+    ];
+
+    // Add sort
+    if (sort) {
+      const sortField = sort.startsWith('-') ? sort.substring(1) : sort;
+      const sortOrder = sort.startsWith('-') ? -1 : 1;
+      pipeline.push({ $sort: { [sortField]: sortOrder } });
+    } else {
+      pipeline.push({ $sort: { publicationDate: -1 } });
+    }
+
+    // Add limit
+    if (limit) {
+      pipeline.push({ $limit: parseInt(limit) });
+    }
+
+    const issues = await Issue.aggregate(pipeline);
 
     res.status(200).json(issues);
   } catch (error) {
-    console.error("Error in getIssuesByNewsletter:", error);
+    console.error("Error in getIssuesForNewsletter:", error);
     res.status(500).json({ message: error.message });
   }
 };
