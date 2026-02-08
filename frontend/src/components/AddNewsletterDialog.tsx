@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Info } from "lucide-react";
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -14,6 +14,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 
 import { useAxios } from "../lib/axios";
 
@@ -104,6 +105,20 @@ export function AddNewsletterDialog({ onCreate, user }: AddNewsletterDialogProps
               Create a new AI-powered newsletter that will synthesize scientific papers weekly based on your topics of interest.
             </DialogDescription>
           </DialogHeader>
+
+          <div className="mt-4">
+            <Alert variant="default" className="bg-primary/5 border-primary/20">
+              <Info className="h-4 w-4 text-primary" />
+              <AlertTitle className="text-sm font-medium">Tips for better results:</AlertTitle>
+              <AlertDescription className="text-xs text-muted-foreground mt-1 italic">
+                <ul className="list-disc pl-4 space-y-1">
+                  <li><strong>Be Specific:</strong> The <strong>Topic</strong> is used directly for search. Use specific terms like "Transformer Architectures in NLP" instead of just "AI".</li>
+                  <li><strong>Detailed Description:</strong> The <strong>Description</strong> helps the AI filter and analyze papers. Mention specific methodologies or sub-topics.</li>
+                  <li><strong>Refine Regularly:</strong> If you get too many or too few papers, try adjusting the topic and description to be more or less specific.</li>
+                </ul>
+              </AlertDescription>
+            </Alert>
+          </div>
           
           <div className="grid gap-5 py-5">
             <div className="grid gap-3">
