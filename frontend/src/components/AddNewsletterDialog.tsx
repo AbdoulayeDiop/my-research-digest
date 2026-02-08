@@ -131,6 +131,17 @@ export function AddNewsletterDialog({ onCreate, user }: AddNewsletterDialogProps
                 required
               />
             </div>
+
+            <div className="grid gap-3">
+              <Label htmlFor="description">Description (Optional)</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => handleInputChange("description", e.target.value)}
+                placeholder="Brief description of what this newsletter will cover..."
+                rows={3}
+              />
+            </div>
             
             <div className="grid gap-3">
               <Label htmlFor="field">Research Field (Optional)</Label>
@@ -154,17 +165,6 @@ export function AddNewsletterDialog({ onCreate, user }: AddNewsletterDialogProps
                   <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            
-            <div className="grid gap-3">
-              <Label htmlFor="description">Description (Optional)</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => handleInputChange("description", e.target.value)}
-                placeholder="Brief description of what this newsletter will cover..."
-                rows={3}
-              />
             </div>
           </div>
           
