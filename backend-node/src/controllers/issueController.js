@@ -247,11 +247,39 @@ exports.toggleReadStatus = async (req, res) => {
       await Issue.updateOne({ _id: id }, { $pull: { readBy: user._id } });
     }
 
-    // Fetch the updated issue to return it
-    const updatedIssue = await Issue.findById(id);
-    res.status(200).json(updatedIssue);
+    // Fetch the updated issue with paperCount and read status
+    const updatedIssueAggregation = await Issue.aggregate([
+      { $match: { _id: issue._id } },
+      {
+        $lookup: {
+          from: 'papers', // The name of the papers collection
+          localField: '_id',
+          foreignField: 'issueId',
+          as: 'papersInfo',
+        },
+      },
+      {
+        $addFields: {
+          paperCount: { $size: '$papersInfo' },
+          read: { $in: [user._id, { $ifNull: ['$readBy', []] }] }
+        },
+      },
+      {
+        $project: {
+          papersInfo: 0, // Exclude the full papersInfo array
+          readBy: 0 // Exclude the readBy array from the final output
+        },
+      },
+    ]);
+
+    if (updatedIssueAggregation.length > 0) {
+      res.status(200).json(updatedIssueAggregation[0]);
+    } else {
+      res.status(404).json({ message: 'Issue not found after update' });
+    }
 
   } catch (error) {
+    console.error("Error in toggleReadStatus:", error);
     res.status(500).json({ message: error.message });
   }
 };
