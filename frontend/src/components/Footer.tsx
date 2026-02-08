@@ -44,7 +44,7 @@ export function Footer({ isAuthenticated }: { isAuthenticated: boolean }) {
         </div>
         
         <div className="border-t pt-8 mt-8 text-center text-muted-foreground">
-          <p>&copy; 2025 My Research Digest. All rights reserved. • Free AI-Powered Research Platform</p>
+          <p>&copy; {new Date().getFullYear()} My Research Digest. All rights reserved. • Free AI-Powered Research Platform</p>
         </div>
       </div>
     </footer>
