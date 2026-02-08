@@ -2,6 +2,7 @@ const Newsletter = require('../models/Newsletter');
 const User = require('../models/User');
 const Issue = require('../models/Issue'); // Import Issue model
 const Paper = require('../models/Paper'); // Import Paper model
+const Reading = require('../models/Reading'); // Import Reading model
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
@@ -208,7 +209,10 @@ exports.deleteNewsletter = async (req, res) => {
     // 4. Delete all issues associated with this newsletter
     await Issue.deleteMany({ newsletterId: newsletterToDelete._id });
 
-    // 5. Delete the newsletter document itself
+    // 5. Delete all readings associated with the issues of this newsletter
+    await Reading.deleteMany({ issueId: { $in: issueIds } });
+
+    // 6. Delete the newsletter document itself
     const deletedNewsletter = await Newsletter.findByIdAndDelete(newsletterId);
 
     res.json({ message: 'Newsletter and all associated data deleted successfully' });

@@ -1,5 +1,8 @@
 const crypto = require('crypto');
 const Issue = require('../models/Issue');
+const Reading = require('../models/Reading'); // Import Reading model
+const User = require('../models/User'); // Import User model to find user by ID
+
 
 exports.markAsReadFromEmail = async (req, res) => {
   try {
@@ -23,12 +26,23 @@ exports.markAsReadFromEmail = async (req, res) => {
       if (!issue) {
         return res.redirect(`${appDomain}/status/error`);
       }
+
+      // Ensure the user exists (or create a placeholder if necessary for Reading model)
+      // For public routes, userId will be the MongoDB _id, not auth0Id
+      let user = await User.findById(userId);
+      if (!user) {
+        // This scenario indicates an issue with the userId provided in the signed URL
+        // or a deleted user. Redirect to error or forbidden.
+        console.warn(`markAsReadFromEmail: User ${userId} not found for issue ${issueId}.`);
+        return res.redirect(`${appDomain}/status/error`);
+      }
       
       // Add user to readBy array if not already present
-      if (!issue.readBy.includes(userId)) {
-        issue.readBy.push(userId);
-        await issue.save();
-      }
+      await Reading.findOneAndUpdate(
+        { userId: user._id, issueId },
+        { readAt: Date.now() },
+        { upsert: true, new: true }
+      );
 
       // Redirect to the success page
       return res.redirect(`${appDomain}/status/success`);

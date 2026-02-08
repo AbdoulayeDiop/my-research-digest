@@ -2,6 +2,8 @@ const Issue = require('../models/Issue');
 const Newsletter = require('../models/Newsletter');
 const Paper = require('../models/Paper'); // Import Paper model
 const User = require('../models/User');
+const Reading = require('../models/Reading'); // Import Reading model
+
 
 // Create a new issue for a newsletter
 exports.createIssue = async (req, res) => {
@@ -69,16 +71,36 @@ exports.getIssuesForNewsletter = async (req, res) => {
           as: 'papersInfo',
         },
       },
+      // Lookup into the new Readings collection to determine read status
+      {
+        $lookup: {
+          from: 'readings',
+          let: { issueId: '$_id', userId: user ? user._id : null }, // Use user._id if available
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$issueId', '$$issueId'] },
+                    { $eq: ['$userId', '$$userId'] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'userReadingStatus',
+        },
+      },
       {
         $addFields: {
           paperCount: { $size: '$papersInfo' },
-          read: isPythonBackend ? false : { $in: [user._id, { $ifNull: ['$readBy', []] }] }
+          read: isPythonBackend ? false : { $gt: [{ $size: '$userReadingStatus' }, 0] }
         },
       },
       {
         $project: {
           papersInfo: 0,
-          readBy: 0
+          userReadingStatus: 0, // Exclude the lookup result
         },
       },
     ];
@@ -132,16 +154,36 @@ exports.getIssuesForAuthenticatedUser = async (req, res) => {
           as: 'papersInfo',
         },
       },
+      // Lookup into the new Readings collection to determine read status
+      {
+        $lookup: {
+          from: 'readings', // The name of the new readings collection
+          let: { issueId: '$_id', userId: user._id },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$issueId', '$$issueId'] },
+                    { $eq: ['$userId', '$$userId'] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'userReadingStatus',
+        },
+      },
       {
         $addFields: {
           paperCount: { $size: '$papersInfo' },
-          read: { $in: [user._id, { $ifNull: ['$readBy', []] }] }
+          read: { $gt: [{ $size: '$userReadingStatus' }, 0] }
         },
       },
       {
         $project: {
           papersInfo: 0,
-          readBy: 0
+          userReadingStatus: 0, // Exclude the lookup result
         },
       },
       { $sort: { publicationDate: -1 } },
@@ -224,7 +266,7 @@ exports.toggleReadStatus = async (req, res) => {
     if (!req.auth || !req.auth.payload || !req.auth.payload.sub) {
       return res.status(401).json({ message: 'Unauthorized: User not authenticated.' });
     }
-    const { id } = req.params;
+    const { id: issueId } = req.params;
     const { read } = req.body; // Expecting 'read' boolean
     const auth0Id = req.auth.payload.sub; // from JWT
 
@@ -233,18 +275,21 @@ exports.toggleReadStatus = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const issue = await Issue.findById(id);
+    const issue = await Issue.findById(issueId);
     if (!issue) {
       return res.status(404).json({ message: 'Issue not found' });
     }
 
-    // Add or remove the user's ID from the readBy array
     if (read) {
-      // Add user to readBy array if not already present
-      await Issue.updateOne({ _id: id }, { $addToSet: { readBy: user._id } });
+      // Mark as read: Create a Reading document
+      await Reading.findOneAndUpdate(
+        { userId: user._id, issueId },
+        { readAt: Date.now() },
+        { upsert: true, new: true }
+      );
     } else {
-      // Remove user from readBy array
-      await Issue.updateOne({ _id: id }, { $pull: { readBy: user._id } });
+      // Mark as unread: Remove the Reading document
+      await Reading.findOneAndDelete({ userId: user._id, issueId });
     }
 
     // Fetch the updated issue with paperCount and read status
@@ -259,15 +304,34 @@ exports.toggleReadStatus = async (req, res) => {
         },
       },
       {
+        $lookup: {
+          from: 'readings', // The name of the new readings collection
+          let: { issueId: '$_id', userId: user._id },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$issueId', '$$issueId'] },
+                    { $eq: ['$userId', '$$userId'] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'userReadingStatus',
+        },
+      },
+      {
         $addFields: {
           paperCount: { $size: '$papersInfo' },
-          read: { $in: [user._id, { $ifNull: ['$readBy', []] }] }
+          read: { $gt: [{ $size: '$userReadingStatus' }, 0] } // Check if userReadingStatus array has elements
         },
       },
       {
         $project: {
           papersInfo: 0, // Exclude the full papersInfo array
-          readBy: 0 // Exclude the readBy array from the final output
+          userReadingStatus: 0, // Exclude the lookup result
         },
       },
     ]);

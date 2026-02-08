@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Newsletter = require('../models/Newsletter');
 const Issue = require('../models/Issue');
 const Paper = require('../models/Paper');
+const Reading = require('../models/Reading'); // Import Reading model
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
@@ -103,7 +104,10 @@ exports.deleteUser = async (req, res) => {
     // 5. Delete all newsletters created by this user
     await Newsletter.deleteMany({ userId });
 
-    // 6. Delete the user document itself
+    // 6. Delete all readings associated with this user
+    await Reading.deleteMany({ userId });
+
+    // 7. Delete the user document itself
     const deletedUser = await User.findByIdAndDelete(userId);
 
     if (!deletedUser) {
