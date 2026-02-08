@@ -1,6 +1,7 @@
 const Issue = require('../models/Issue');
 const Newsletter = require('../models/Newsletter');
 const Paper = require('../models/Paper'); // Import Paper model
+const User = require('../models/User');
 
 // Create a new issue for a newsletter
 exports.createIssue = async (req, res) => {
@@ -34,7 +35,17 @@ exports.createIssue = async (req, res) => {
 // Get all issues for a specific newsletter with paper count
 exports.getIssuesByNewsletter = async (req, res) => {
   try {
+    // Ensure user is authenticated
+    if (!req.auth || !req.auth.payload || !req.auth.payload.sub) {
+      return res.status(401).json({ message: 'Unauthorized: User not authenticated.' });
+    }
     const { newsletterId } = req.params;
+    const auth0Id = req.auth.payload.sub;
+
+    const user = await User.findOne({ auth0Id });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
     // Verify that the newsletter exists
     const newsletter = await Newsletter.findById(newsletterId);
@@ -44,10 +55,6 @@ exports.getIssuesByNewsletter = async (req, res) => {
 
     const issues = await Issue.aggregate([
       { $match: { newsletterId: newsletter._id } },
-      { $addFields: { issueObjectId: "$_id" } }, // Convert _id to string for logging if needed
-      { $addFields: { newsletterObjectId: "$newsletterId" } }, // Convert newsletterId to string for logging if needed
-      { $addFields: { issueIdString: { $toString: "$_id" } } }, // Convert _id to string for lookup if needed
-      { $addFields: { newsletterIdString: { $toString: "$newsletterId" } } }, // Convert newsletterId to string for lookup if needed
       {
         $lookup: {
           from: 'papers', // The name of the papers collection
@@ -59,11 +66,13 @@ exports.getIssuesByNewsletter = async (req, res) => {
       {
         $addFields: {
           paperCount: { $size: '$papersInfo' },
+          read: { $in: [user._id, { $ifNull: ['$readBy', []] }] } // Check if user's ID is in readBy array
         },
       },
       {
         $project: {
-          papersInfo: 0, // Exclude the full papersInfo array if not needed
+          papersInfo: 0, // Exclude the full papersInfo array
+          readBy: 0 // Exclude the readBy array from the final output
         },
       },
       { $sort: { publicationDate: -1 } },
@@ -142,18 +151,37 @@ exports.countIssues = async (req, res) => {
 
 exports.toggleReadStatus = async (req, res) => {
   try {
+    // Ensure user is authenticated
+    if (!req.auth || !req.auth.payload || !req.auth.payload.sub) {
+      return res.status(401).json({ message: 'Unauthorized: User not authenticated.' });
+    }
     const { id } = req.params;
-    const { read } = req.body; // Expecting 'read' boolean in request body
+    const { read } = req.body; // Expecting 'read' boolean
+    const auth0Id = req.auth.payload.sub; // from JWT
+
+    const user = await User.findOne({ auth0Id });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
     const issue = await Issue.findById(id);
-
     if (!issue) {
       return res.status(404).json({ message: 'Issue not found' });
     }
 
-    issue.read = read;
-    await issue.save();
-    res.status(200).json(issue);
+    // Add or remove the user's ID from the readBy array
+    if (read) {
+      // Add user to readBy array if not already present
+      await Issue.updateOne({ _id: id }, { $addToSet: { readBy: user._id } });
+    } else {
+      // Remove user from readBy array
+      await Issue.updateOne({ _id: id }, { $pull: { readBy: user._id } });
+    }
+
+    // Fetch the updated issue to return it
+    const updatedIssue = await Issue.findById(id);
+    res.status(200).json(updatedIssue);
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

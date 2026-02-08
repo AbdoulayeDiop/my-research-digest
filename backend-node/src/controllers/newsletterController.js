@@ -101,6 +101,7 @@ exports.getNewslettersByUser = async (req, res) => {
           topic: 1,
           description: 1,
           field: 1,
+          lastSearch: 1,
           createdAt: 1,
           totalIssues: 1,
           lastIssueDate: 1,
@@ -130,10 +131,10 @@ exports.getNewsletterById = async (req, res) => {
 // Update a newsletter
 exports.updateNewsletter = async (req, res) => {
   try {
-    const { topic, description, field } = req.body;
+    const { topic, description, field, lastSearch } = req.body;
     const updatedNewsletter = await Newsletter.findByIdAndUpdate(
       req.params.id,
-      { topic, description, field },
+      { topic, description, field, lastSearch },
       { new: true } // Return the updated document
     );
     if (!updatedNewsletter) {

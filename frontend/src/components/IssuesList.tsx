@@ -208,7 +208,7 @@ export function IssuesList({ onBack, onViewIssue }: IssuesListProps) {
 
                       <CardContent>
                         <p className="text-muted-foreground">
-                          {issue.introduction}
+                          {issue.summary}
                         </p>
                       </CardContent>
                     </div>

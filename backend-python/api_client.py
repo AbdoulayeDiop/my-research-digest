@@ -133,3 +133,18 @@ class ApiClient:
         except requests.exceptions.RequestException as e:
             logging.error(f"Error creating issue for newsletter {newsletter_id}: {e}")
             return None
+
+    def update_newsletter(self, newsletter_id, newsletter_data):
+        """Updates a newsletter's information."""
+        token = self._get_access_token()
+        if not token:
+            return None
+        headers = {'Authorization': f'Bearer {token}'}
+        try:
+            response = self.session.put(f"{self.base_url}/newsletters/{newsletter_id}", json=newsletter_data, headers=headers)
+            response.raise_for_status()
+            logging.info(f"Successfully updated newsletter {newsletter_id}")
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Error updating newsletter {newsletter_id}: {e}")
+            return None

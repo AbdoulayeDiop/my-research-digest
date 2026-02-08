@@ -19,6 +19,9 @@ const NewsletterSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  lastSearch: {
+    type: Date,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

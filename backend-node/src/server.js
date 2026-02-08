@@ -7,6 +7,7 @@ const newsletterRoutes = require('./routes/newsletters');
 const issueRoutes = require('./routes/issues');
 const paperRoutes = require('./routes/papers');
 const userRoutes = require('./routes/users');
+const publicRoutes = require('./routes/public');
 const jwtCheck = require('./middleware/authMiddleware');
 
 const app = express();
@@ -29,6 +30,8 @@ mongoose.connect(MONGODB_URI)
   .catch(err => console.error('MongoDB connection error:', err));
 
 // API Routes
+app.use('/api/public/issues', publicRoutes); // Public route for actions like marking as read from email
+
 app.use('/api/newsletters', jwtCheck, newsletterRoutes);
 app.use('/api/newsletters/:newsletterId/issues', jwtCheck, issueRoutes); // For newsletter-specific issue operations
 app.use('/api/issues', jwtCheck, issueRoutes); // For general issue operations (like count)

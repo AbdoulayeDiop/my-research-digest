@@ -37,10 +37,10 @@ const IssueSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
-  read: {
-    type: Boolean,
-    default: false,
-  },
+  readBy: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
 });
 
 module.exports = mongoose.model('Issue', IssueSchema);
