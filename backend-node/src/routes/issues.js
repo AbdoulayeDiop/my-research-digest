@@ -27,4 +27,10 @@ router.delete('/:id', issueController.deleteIssue);
 // Toggle read status of an issue
 router.put('/:id/read', issueController.toggleReadStatus);
 
+// Get paper count for a specific issue
+router.get('/:id/paperCount', issueController.getIssuePaperCount);
+
+// Get read status for a specific issue for the authenticated user
+router.get('/:id/readStatus', issueController.getIssueReadStatus);
+
 module.exports = router;

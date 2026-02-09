@@ -17,7 +17,7 @@ interface Issue {
   status: "published" | "draft";
   newsletterId: string;
   newsletterTitle: string;
-  paperCount: number;
+  paperCount?: number; // Optional as it's fetched separately
   read: boolean;
 }
 
@@ -59,7 +59,21 @@ export function IssuesList({ onBack, onViewIssue }: IssuesListProps) {
 
         if (currentNewsletter) {
           const issuesResponse = await axios.get(`/issues/byNewsletterId/${currentNewsletter._id}`);
-          setIssues(issuesResponse.data);
+          const issuesData = issuesResponse.data;
+          setIssues(issuesData);
+
+          // Fetch paper counts for each issue asynchronously
+          issuesData.forEach(async (issue: Issue) => {
+            try {
+              const countResponse = await axios.get(`/issues/${issue._id}/paperCount`);
+              const { paperCount } = countResponse.data;
+              setIssues(prevIssues => prevIssues.map(i => 
+                i._id === issue._id ? { ...i, paperCount } : i
+              ));
+            } catch (err) {
+              console.error(`Error fetching paper count for issue ${issue._id}:`, err);
+            }
+          });
         }
       } catch (err) {
         setError("Failed to fetch newsletter or issues.");
@@ -78,8 +92,8 @@ export function IssuesList({ onBack, onViewIssue }: IssuesListProps) {
       if (!issueToUpdate) return;
       const newReadStatus = !issueToUpdate.read;
       const response = await axios.put(`/issues/${issueId}/read`, { read: newReadStatus });
-      const updatedIssue = response.data;
-      setIssues(issues.map(i => i._id === issueId ? { ...updatedIssue, paperCount: issueToUpdate.paperCount } : i));
+      const { read } = response.data;
+      setIssues(issues.map(i => i._id === issueId ? { ...i, read } : i));
     } catch (error) {
       console.error("Error toggling read status:", error);
     }
@@ -150,7 +164,7 @@ export function IssuesList({ onBack, onViewIssue }: IssuesListProps) {
         </div>
         <div className="bg-card rounded-lg p-4 border">
           <h3>Total Papers</h3>
-          <p className="text-muted-foreground mt-1">{issues.reduce((sum, issue) => sum + issue.paperCount, 0)}</p>
+          <p className="text-muted-foreground mt-1">{issues.reduce((sum, issue) => sum + (issue.paperCount || 0), 0)}</p>
         </div>
       </div>
 
@@ -182,7 +196,7 @@ export function IssuesList({ onBack, onViewIssue }: IssuesListProps) {
                               </div>
                               <div className="flex items-center gap-1">
                                 <FileText className="w-4 h-4" />
-                                {issue.paperCount} Papers
+                                {issue.paperCount !== undefined ? `${issue.paperCount} Papers` : "Loading..."}
                               </div>
                             </div>
                           </div>

@@ -33,7 +33,7 @@ exports.createIssue = async (req, res) => {
   }
 };
 
-// Get all issues for a specific newsletter with paper count
+// Get all issues for a specific newsletter
 exports.getIssuesForNewsletter = async (req, res) => {
   try {
     // Ensure user is authenticated
@@ -63,14 +63,6 @@ exports.getIssuesForNewsletter = async (req, res) => {
 
     const pipeline = [
       { $match: { newsletterId: newsletter._id } },
-      {
-        $lookup: {
-          from: 'papers',
-          localField: '_id',
-          foreignField: 'issueId',
-          as: 'papersInfo',
-        },
-      },
       // Lookup into the new Readings collection to determine read status
       {
         $lookup: {
@@ -93,13 +85,11 @@ exports.getIssuesForNewsletter = async (req, res) => {
       },
       {
         $addFields: {
-          paperCount: { $size: '$papersInfo' },
           read: isPythonBackend ? false : { $gt: [{ $size: '$userReadingStatus' }, 0] }
         },
       },
       {
         $project: {
-          papersInfo: 0,
           userReadingStatus: 0, // Exclude the lookup result
         },
       },
@@ -146,14 +136,6 @@ exports.getIssuesForAuthenticatedUser = async (req, res) => {
 
     const issues = await Issue.aggregate([
       { $match: { newsletterId: { $in: newsletterIds } } },
-      {
-        $lookup: {
-          from: 'papers', // The name of the papers collection
-          localField: '_id',
-          foreignField: 'issueId',
-          as: 'papersInfo',
-        },
-      },
       // Lookup into the new Readings collection to determine read status
       {
         $lookup: {
@@ -176,13 +158,11 @@ exports.getIssuesForAuthenticatedUser = async (req, res) => {
       },
       {
         $addFields: {
-          paperCount: { $size: '$papersInfo' },
           read: { $gt: [{ $size: '$userReadingStatus' }, 0] }
         },
       },
       {
         $project: {
-          papersInfo: 0,
           userReadingStatus: 0, // Exclude the lookup result
         },
       },
@@ -292,58 +272,41 @@ exports.toggleReadStatus = async (req, res) => {
       await Reading.findOneAndDelete({ userId: user._id, issueId });
     }
 
-    // Fetch the updated issue with paperCount and read status
-    const updatedIssueAggregation = await Issue.aggregate([
-      { $match: { _id: issue._id } },
-      {
-        $lookup: {
-          from: 'papers', // The name of the papers collection
-          localField: '_id',
-          foreignField: 'issueId',
-          as: 'papersInfo',
-        },
-      },
-      {
-        $lookup: {
-          from: 'readings', // The name of the new readings collection
-          let: { issueId: '$_id', userId: user._id },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ['$issueId', '$$issueId'] },
-                    { $eq: ['$userId', '$$userId'] },
-                  ],
-                },
-              },
-            },
-          ],
-          as: 'userReadingStatus',
-        },
-      },
-      {
-        $addFields: {
-          paperCount: { $size: '$papersInfo' },
-          read: { $gt: [{ $size: '$userReadingStatus' }, 0] } // Check if userReadingStatus array has elements
-        },
-      },
-      {
-        $project: {
-          papersInfo: 0, // Exclude the full papersInfo array
-          userReadingStatus: 0, // Exclude the lookup result
-        },
-      },
-    ]);
-
-    if (updatedIssueAggregation.length > 0) {
-      res.status(200).json(updatedIssueAggregation[0]);
-    } else {
-      res.status(404).json({ message: 'Issue not found after update' });
-    }
+    // Optimization: Return only the essential update
+    res.status(200).json({ _id: issueId, read });
 
   } catch (error) {
     console.error("Error in toggleReadStatus:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getIssuePaperCount = async (req, res) => {
+  try {
+    const { id: issueId } = req.params;
+    const count = await Paper.countDocuments({ issueId });
+    res.status(200).json({ _id: issueId, paperCount: count });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getIssueReadStatus = async (req, res) => {
+  try {
+    if (!req.auth || !req.auth.payload || !req.auth.payload.sub) {
+      return res.status(401).json({ message: 'Unauthorized: User not authenticated.' });
+    }
+    const { id: issueId } = req.params;
+    const auth0Id = req.auth.payload.sub;
+
+    const user = await User.findOne({ auth0Id });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const reading = await Reading.findOne({ userId: user._id, issueId });
+    res.status(200).json({ _id: issueId, read: !!reading });
+  } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
