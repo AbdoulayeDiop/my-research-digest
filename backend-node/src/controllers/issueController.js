@@ -36,81 +36,23 @@ exports.createIssue = async (req, res) => {
 // Get all issues for a specific newsletter
 exports.getIssuesForNewsletter = async (req, res) => {
   try {
-    // Ensure user is authenticated
-    if (!req.auth || !req.auth.payload || !req.auth.payload.sub) {
-      return res.status(401).json({ message: 'Unauthorized: User not authenticated.' });
-    }
     const { newsletterId } = req.params;
-    const { limit, sort } = req.query; // Added limit and sort back since Python backend uses them
-    const auth0Id = req.auth.payload.sub;
+    const { limit, sort } = req.query;
 
-    const pythonClientId = process.env.AUTH0_PYTHON_CLIENT_ID;
-    const isPythonBackend = pythonClientId && auth0Id && (auth0Id === pythonClientId || auth0Id === `${pythonClientId}@clients`);
+    const query = { newsletterId };
+    let mongooseQuery = Issue.find(query);
 
-    let user = null;
-    if (!isPythonBackend) {
-      user = await User.findOne({ auth0Id });
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-    }
-
-    // Verify that the newsletter exists
-    const newsletter = await Newsletter.findById(newsletterId);
-    if (!newsletter) {
-      return res.status(404).json({ message: 'Newsletter not found' });
-    }
-
-    const pipeline = [
-      { $match: { newsletterId: newsletter._id } },
-      // Lookup into the new Readings collection to determine read status
-      {
-        $lookup: {
-          from: 'readings',
-          let: { issueId: '$_id', userId: user ? user._id : null }, // Use user._id if available
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ['$issueId', '$$issueId'] },
-                    { $eq: ['$userId', '$$userId'] },
-                  ],
-                },
-              },
-            },
-          ],
-          as: 'userReadingStatus',
-        },
-      },
-      {
-        $addFields: {
-          read: isPythonBackend ? false : { $gt: [{ $size: '$userReadingStatus' }, 0] }
-        },
-      },
-      {
-        $project: {
-          userReadingStatus: 0, // Exclude the lookup result
-        },
-      },
-    ];
-
-    // Add sort
     if (sort) {
-      const sortField = sort.startsWith('-') ? sort.substring(1) : sort;
-      const sortOrder = sort.startsWith('-') ? -1 : 1;
-      pipeline.push({ $sort: { [sortField]: sortOrder } });
+      mongooseQuery = mongooseQuery.sort(sort);
     } else {
-      pipeline.push({ $sort: { publicationDate: -1 } });
+      mongooseQuery = mongooseQuery.sort({ publicationDate: -1 });
     }
 
-    // Add limit
     if (limit) {
-      pipeline.push({ $limit: parseInt(limit) });
+      mongooseQuery = mongooseQuery.limit(parseInt(limit));
     }
 
-    const issues = await Issue.aggregate(pipeline);
-
+    const issues = await mongooseQuery;
     res.status(200).json(issues);
   } catch (error) {
     console.error("Error in getIssuesForNewsletter:", error);
@@ -134,40 +76,7 @@ exports.getIssuesForAuthenticatedUser = async (req, res) => {
     const newsletters = await Newsletter.find({ userId: user._id });
     const newsletterIds = newsletters.map(nl => nl._id);
 
-    const issues = await Issue.aggregate([
-      { $match: { newsletterId: { $in: newsletterIds } } },
-      // Lookup into the new Readings collection to determine read status
-      {
-        $lookup: {
-          from: 'readings', // The name of the new readings collection
-          let: { issueId: '$_id', userId: user._id },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ['$issueId', '$$issueId'] },
-                    { $eq: ['$userId', '$$userId'] },
-                  ],
-                },
-              },
-            },
-          ],
-          as: 'userReadingStatus',
-        },
-      },
-      {
-        $addFields: {
-          read: { $gt: [{ $size: '$userReadingStatus' }, 0] }
-        },
-      },
-      {
-        $project: {
-          userReadingStatus: 0, // Exclude the lookup result
-        },
-      },
-      { $sort: { publicationDate: -1 } },
-    ]);
+    const issues = await Issue.find({ newsletterId: { $in: newsletterIds } }).sort({ publicationDate: -1 });
 
     res.status(200).json(issues);
   } catch (error) {

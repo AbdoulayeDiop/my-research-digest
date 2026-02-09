@@ -60,18 +60,27 @@ export function IssuesList({ onBack, onViewIssue }: IssuesListProps) {
         if (currentNewsletter) {
           const issuesResponse = await axios.get(`/issues/byNewsletterId/${currentNewsletter._id}`);
           const issuesData = issuesResponse.data;
-          setIssues(issuesData);
+          // Initialize read status to false until fetched
+          setIssues(issuesData.map((i: any) => ({ ...i, read: false })));
 
-          // Fetch paper counts for each issue asynchronously
+          // Fetch paper counts and read status for each issue asynchronously
           issuesData.forEach(async (issue: Issue) => {
             try {
-              const countResponse = await axios.get(`/issues/${issue._id}/paperCount`);
+              // Fetch paper count
+              const countPromise = axios.get(`/issues/${issue._id}/paperCount`);
+              // Fetch read status
+              const statusPromise = axios.get(`/issues/${issue._id}/readStatus`);
+              
+              const [countResponse, statusResponse] = await Promise.all([countPromise, statusPromise]);
+              
               const { paperCount } = countResponse.data;
+              const { read } = statusResponse.data;
+
               setIssues(prevIssues => prevIssues.map(i => 
-                i._id === issue._id ? { ...i, paperCount } : i
+                i._id === issue._id ? { ...i, paperCount, read } : i
               ));
             } catch (err) {
-              console.error(`Error fetching paper count for issue ${issue._id}:`, err);
+              console.error(`Error fetching data for issue ${issue._id}:`, err);
             }
           });
         }
