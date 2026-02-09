@@ -9,7 +9,7 @@ exports.markAsReadFromEmail = async (req, res) => {
     const { issueId } = req.params;
     const { userId, signature } = req.query;
     const secret = process.env.URL_SIGNATURE_SECRET;
-    const appDomain = process.env.APP_DOMAIN || process.env.FRONTEND_URL || 'http://localhost';
+    const appDomain = process.env.APP_DOMAIN || 'http://localhost';
 
     if (!userId || !signature || !secret) {
       return res.redirect(`${appDomain}/status/error`);
@@ -54,7 +54,7 @@ exports.markAsReadFromEmail = async (req, res) => {
 
   } catch (error) {
     console.error('Error marking issue as read from email:', error);
-    const appDomain = process.env.APP_DOMAIN || process.env.FRONTEND_URL || 'http://localhost';
+    const appDomain = process.env.APP_DOMAIN || 'http://localhost';
     res.redirect(`${appDomain}/status/error`);
   }
 };
