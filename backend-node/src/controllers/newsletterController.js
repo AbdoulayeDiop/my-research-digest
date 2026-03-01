@@ -27,7 +27,7 @@ exports.createNewsletter = async (req, res) => {
     }
     const auth0Id = req.auth.payload.sub;
 
-    const { topic } = req.body;
+    const { topic, description } = req.body;
     
     // Fetch user details from Auth0 or create if not exists
     const user = await User.findOneAndUpdate(
@@ -38,7 +38,9 @@ exports.createNewsletter = async (req, res) => {
 
     const newNewsletter = new Newsletter({ 
       userId: user._id, 
-      topic
+      topic,
+      description: description || "",
+      status: 'active'
     });
     await newNewsletter.save();
 
@@ -46,15 +48,24 @@ exports.createNewsletter = async (req, res) => {
     const mailOptions = {
       from: `"My Research Digest" <${process.env.SMTP_USER}>`,
       to: user.email,
-      subject: `Confirmation: Your Newsletter on ${topic} Has Been Created!`,
+      subject: `Confirmation: Your Newsletter on ${topic} is Active!`,
       html: `
-        <p>Dear ${user.name},</p>
-        <p>Thank you for creating a new newsletter on the topic of <strong>${topic}</strong>!</p>
-        <p>Your first AI-powered research digest for this topic will be generated and sent to your inbox within the next 24 hours.</p>
-        <p>You can view and manage your newsletters here:</p>
-        <p><a href="https://my-research-digest.com">Go to My Research Digest Dashboard</a></p>
-        <p>Best regards,</p>
-        <p>The My Research Digest Team</p>
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Your newsletter on "${topic}" is now active!</h2>
+          <p>Dear ${user.name},</p>
+          <p>Thank you for creating a new newsletter on <strong>${topic}</strong>.</p>
+          <p>The AI is already scheduled to scan for the latest research and send your first digest within the next 24 hours.</p>
+          
+          <p>While everything is ready to go, you can always fine-tune your settings (like search queries and filters) to make the results even more tailored to your needs:</p>
+          
+          <p style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.APP_DOMAIN}/newsletters/${newNewsletter._id}/settings" style="background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+              Manage Newsletter Settings
+            </a>
+          </p>
+
+          <p>Best regards,<br>The My Research Digest Team</p>
+        </div>
       `,
     };
 

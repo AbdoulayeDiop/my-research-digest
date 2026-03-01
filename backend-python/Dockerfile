@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 8000
 
 # Define the command to run the app
-CMD [ "python", "main.py" ]
+CMD [ "python", "api.py" ]

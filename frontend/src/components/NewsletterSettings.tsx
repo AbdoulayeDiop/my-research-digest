@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "./ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 interface Newsletter {
   _id: string;
@@ -58,7 +59,7 @@ const PUBLICATION_TYPES = [
   'BookSection'
 ];
 
-export function NewsletterSettings() {
+export function NewsletterSettings({ showHeader = true }: { showHeader?: boolean }) {
   const { newsletterId } = useParams<{ newsletterId: string }>();
   const navigate = useNavigate();
   
@@ -211,27 +212,21 @@ export function NewsletterSettings() {
   }
 
   return (
-    <div className="container mx-auto py-10 max-w-4xl">
-      <div className="mb-10 space-y-4">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="-ml-2 shrink-0">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-3xl font-bold tracking-tight">{newsletter.topic}</h1>
-            <Badge 
-              variant={newsletter.status === 'active' ? "default" : "secondary"}
-              className={newsletter.status === 'active' ? "bg-green-600 hover:bg-green-700" : ""}
-            >
-              {newsletter.status === 'active' ? <CheckCircle2 className="w-3 h-3 mr-1" /> : <XCircle className="w-3 h-3 mr-1" />}
-              {newsletter.status.toUpperCase()}
-            </Badge>
-          </div>
-        </div>
-        <p className="text-muted-foreground max-w-3xl text-lg leading-relaxed pl-12">
-          Configure your newsletter. Add a detailed description, generate optimized search queries, and verify results with a test search. Once ready, activate the weekly search to start receiving personalized research digests directly in your inbox.
-        </p>
-      </div>
+    <div className="container mx-auto max-w-4xl py-6">
+      
+      {/* Tips Section */}
+              
+      {newsletter.status === 'inactive' && (
+        // <p className="text-muted-foreground text-lg leading-relaxed mb-8">
+        //   Configure and <strong>activate your newsletter below</strong> to start receiving personalized research digests directly in your inbox.
+        // </p>
+        <Alert className="bg-orange-300/5 border-orange-300/20 mb-8">
+          <Info className="h-5 w-5" style={{ color: 'orange'}} />
+          <AlertDescription className="text-sm">
+            <p><strong>INACTIVE</strong><br/>Configure and activate your newsletter below to start receiving personalized research digests directly in your inbox.</p>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid gap-8">
 
@@ -239,7 +234,6 @@ export function NewsletterSettings() {
         <Card>
           <CardHeader className="pb-3" withSeparator={false}>
             <CardTitle>General Configuration</CardTitle>
-            <CardDescription>Configure the basic details and behavior of your newsletter.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-8">
             <div className="space-y-2">
@@ -252,55 +246,13 @@ export function NewsletterSettings() {
                 rows={4}
               />
               
-              {/* Tips Section */}
+              {/* Description tip */}
               <Alert className="bg-chart-2/5 border-chart-2/20">
                 <Lightbulb className="h-5 w-5" style={{ color: 'var(--chart-2)'}} />
                 <AlertDescription className="text-sm">
-                  <p>The <strong>Description</strong> is crucial. It guides the AI in generating better search queries and filtering out irrelevant papers. A clear description ensures you only receive high-impact research tailored to your specific needs.</p>
+                  <p>The <strong>Description</strong> helps the AI generate better search queries and filter for relevance. A clear description ensures you only receive research tailored to your specific needs.</p>
                 </AlertDescription>
               </Alert>
-            </div>
-
-            {/* Search Queries */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label className="text-base">Search Queries</Label>
-                  <p className="text-sm text-muted-foreground">These queries are used to search the Semantic Scholar database.</p>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => generateQueries()} 
-                  disabled={isGeneratingQueries}
-                  className="gap-2"
-                >
-                  <RefreshCw className={`w-4 h-4 ${isGeneratingQueries ? 'animate-spin' : ''}`} />
-                  {newsletter.queries?.length > 0 ? "Regenerate" : "Generate Queries"}
-                </Button>
-              </div>
-              
-              <div className="space-y-3">
-                {newsletter.queries?.length > 0 ? (
-                  newsletter.queries.map((query, index) => (
-                    <div key={index} className="flex gap-2">
-                      <Badge variant="outline" className="h-9 px-3 shrink-0">{index + 1}</Badge>
-                      <Input 
-                        value={query} 
-                        onChange={(e) => {
-                          const newQueries = [...newsletter.queries];
-                          newQueries[index] = e.target.value;
-                          setNewsletter({ ...newsletter, queries: newQueries });
-                        }}
-                      />
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-6 border-2 border-dashed rounded-lg text-muted-foreground bg-muted/30">
-                    No queries generated yet. Use the button above to generate optimized search queries.
-                  </div>
-                )}
-              </div>
             </div>
 
             <div className="space-y-3">
@@ -330,7 +282,7 @@ export function NewsletterSettings() {
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div className="space-y-0.5">
                 <Label className="text-base">
-                  {newsletter.status === 'active' ? 'Weekly search is active' : 'Activate weekly search'}
+                  {newsletter.status === 'active' ? 'The newsletter is active' : 'Activate the newsletter'}
                 </Label>
                 <div className="text-sm text-muted-foreground">
                   {newsletter.status === 'active' 
@@ -344,7 +296,7 @@ export function NewsletterSettings() {
                   className={newsletter.status === 'active' ? "bg-green-600 hover:bg-green-700" : ""}
                 >
                   {newsletter.status === 'active' ? <CheckCircle2 className="w-3 h-3 mr-1" /> : <XCircle className="w-3 h-3 mr-1" />}
-                  {newsletter.status === 'active' ? 'SEARCHING' : 'INACTIVE'}
+                  {newsletter.status.toUpperCase()}
                 </Badge>
                 <Switch
                   checked={newsletter.status === 'active'}
@@ -355,7 +307,7 @@ export function NewsletterSettings() {
           </CardContent>
         </Card>
 
-        {/* Advanced Search Filters */}
+        {/* Advanced Settings */}
         <Collapsible
           open={isAdvancedOpen}
           onOpenChange={setIsAdvancedOpen}
@@ -367,237 +319,287 @@ export function NewsletterSettings() {
               className="flex items-center justify-between w-full hover:bg-transparent h-20 px-6">
               <div className="text-left">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
-                  Advanced Search Filters
+                  Advanced Settings
                   <Badge variant="secondary" className="font-normal text-[10px] uppercase">Optional</Badge>
                 </h3>
-                <p className="text-sm text-muted-foreground">Restrict search results by venue, type, and impact.</p>
+                <p className="text-sm text-muted-foreground">Fine-tune search queries, filters, and test your configuration.</p>
               </div>
               {isAdvancedOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
             </Button>
           </CollapsibleTrigger>
-          <CollapsibleContent className="px-6 pb-6 space-y-6">
-            <div className="grid gap-6 pt-2">
-              {/* Venues */}
-              <div className="space-y-2">
-                <Label htmlFor="venues">Preferred Venues</Label>
-                <div className="text-xs text-muted-foreground mb-1">
-                  Specific journals or conferences (comma-separated). e.g., ArXiv, Nature, ICML, NeurIPS
-                </div>
-                <Input
-                  id="venues"
-                  placeholder="e.g., ArXiv, Nature, ICML"
-                  value={newsletter.filters?.venues.join(", ") || ""}
-                  onChange={(e) => {
-                    const venues = e.target.value.split(",").map(v => v.trim()).filter(v => v !== "");
-                    setNewsletter({
-                      ...newsletter,
-                      filters: { ...newsletter.filters!, venues }
-                    });
-                  }}
-                />
-              </div>
-
-              {/* Publication Types */}
-              <div className="space-y-3">
-                <Label>Publication Types</Label>
-                <div className="text-xs text-muted-foreground mb-2">
-                  Select the types of papers you want to include.
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {PUBLICATION_TYPES.map((type) => (
-                    <div key={type} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`type-${type}`}
-                        checked={newsletter.filters?.publicationTypes.includes(type)}
-                        onCheckedChange={(checked) => {
-                          const currentTypes = [...(newsletter.filters?.publicationTypes || [])];
-                          let newTypes;
-                          if (checked) {
-                            newTypes = [...currentTypes, type];
-                          } else {
-                            newTypes = currentTypes.filter(t => t !== type);
-                          }
-                          setNewsletter({
-                            ...newsletter,
-                            filters: { ...newsletter.filters!, publicationTypes: newTypes }
-                          });
-                        }}
-                      />
-                      <Label
-                        htmlFor={`type-${type}`}
-                        className="text-sm font-normal cursor-pointer"
-                      >
-                        {type.replace(/([A-Z])/g, ' $1').trim()}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Min Citations & Open Access */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="minCitationCount">Minimum Citation Count</Label>
-                  <div className="text-xs text-muted-foreground mb-1">
-                    Only include papers with at least this many citations.
+          <CollapsibleContent className="px-6 pb-6 space-y-8">
+            <div className="pt-4 space-y-8">
+              {/* Search Queries */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label className="text-base">Search Queries</Label>
+                    <p className="text-sm text-muted-foreground">These queries are used to search the Semantic Scholar database.</p>
                   </div>
-                  <Input
-                    id="minCitationCount"
-                    type="number"
-                    min="0"
-                    value={newsletter.filters?.minCitationCount || 0}
-                    onChange={(e) => {
-                      setNewsletter({
-                        ...newsletter,
-                        filters: { ...newsletter.filters!, minCitationCount: parseInt(e.target.value) || 0 }
-                      });
-                    }}
-                  />
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => generateQueries()} 
+                    disabled={isGeneratingQueries}
+                    className="gap-2"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isGeneratingQueries ? 'animate-spin' : ''}`} />
+                    {newsletter.queries?.length > 0 ? "Regenerate" : "Generate Queries"}
+                  </Button>
+                </div>
+                
+                <div className="space-y-3">
+                  {newsletter.queries?.length > 0 ? (
+                    newsletter.queries.map((query, index) => (
+                      <div key={index} className="flex gap-2">
+                        <Badge variant="outline" className="h-9 px-3 shrink-0">{index + 1}</Badge>
+                        <Input 
+                          value={query} 
+                          onChange={(e) => {
+                            const newQueries = [...newsletter.queries];
+                            newQueries[index] = e.target.value;
+                            setNewsletter({ ...newsletter, queries: newQueries });
+                          }}
+                        />
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-6 border-2 border-dashed rounded-lg text-muted-foreground bg-muted/30">
+                      No queries generated yet. Use the button above to generate optimized search queries.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Filters */}
+              <div className="border-t pt-8 space-y-6">
+                <div className="space-y-1">
+                  <Label className="text-base">Search Filters</Label>
+                  <p className="text-sm text-muted-foreground">Restrict search results by venue, type, and impact.</p>
                 </div>
 
-                <div className="flex flex-col justify-end">
-                  <div className="flex items-center justify-between p-3 border rounded-lg h-[56px]">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="openAccess" className="cursor-pointer">Open Access Only</Label>
-                      <div className="text-[10px] text-muted-foreground">Ensure a PDF is freely available.</div>
+                <div className="grid gap-6">
+                  {/* Venues */}
+                  <div className="space-y-2">
+                    <Label htmlFor="venues">Preferred Venues</Label>
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Specific journals or conferences (comma-separated). e.g., ArXiv, Nature, ICML, NeurIPS
                     </div>
-                    <Switch
-                      id="openAccess"
-                      checked={newsletter.filters?.openAccessPdf || false}
-                      onCheckedChange={(checked) => {
+                    <Input
+                      id="venues"
+                      placeholder="e.g., ArXiv, Nature, ICML"
+                      value={newsletter.filters?.venues.join(", ") || ""}
+                      onChange={(e) => {
+                        const venues = e.target.value.split(",").map(v => v.trim()).filter(v => v !== "");
                         setNewsletter({
                           ...newsletter,
-                          filters: { ...newsletter.filters!, openAccessPdf: checked }
+                          filters: { ...newsletter.filters!, venues }
                         });
                       }}
                     />
                   </div>
+
+                  {/* Publication Types */}
+                  <div className="space-y-3">
+                    <Label>Publication Types</Label>
+                    <div className="text-xs text-muted-foreground mb-2">
+                      Select the types of papers you want to include.
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {PUBLICATION_TYPES.map((type) => (
+                        <div key={type} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`type-${type}`}
+                            checked={newsletter.filters?.publicationTypes.includes(type)}
+                            onCheckedChange={(checked) => {
+                              const currentTypes = [...(newsletter.filters?.publicationTypes || [])];
+                              let newTypes;
+                              if (checked) {
+                                newTypes = [...currentTypes, type];
+                              } else {
+                                newTypes = currentTypes.filter(t => t !== type);
+                              }
+                              setNewsletter({
+                                ...newsletter,
+                                filters: { ...newsletter.filters!, publicationTypes: newTypes }
+                              });
+                            }}
+                          />
+                          <Label
+                            htmlFor={`type-${type}`}
+                            className="text-sm font-normal cursor-pointer"
+                          >
+                            {type.replace(/([A-Z])/g, ' $1').trim()}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Min Citations & Open Access */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="minCitationCount">Minimum Citation Count</Label>
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Only include papers with at least this many citations.
+                      </div>
+                      <Input
+                        id="minCitationCount"
+                        type="number"
+                        min="0"
+                        value={newsletter.filters?.minCitationCount || 0}
+                        onChange={(e) => {
+                          setNewsletter({
+                            ...newsletter,
+                            filters: { ...newsletter.filters!, minCitationCount: parseInt(e.target.value) || 0 }
+                          });
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex flex-col justify-end">
+                      <div className="flex items-center justify-between p-3 border rounded-lg h-[56px]">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="openAccess" className="cursor-pointer">Open Access Only</Label>
+                          <div className="text-[10px] text-muted-foreground">Ensure a PDF is freely available.</div>
+                        </div>
+                        <Switch
+                          id="openAccess"
+                          checked={newsletter.filters?.openAccessPdf || false}
+                          onCheckedChange={(checked) => {
+                            setNewsletter({
+                              ...newsletter,
+                              filters: { ...newsletter.filters!, openAccessPdf: checked }
+                            });
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              </div>
+
+              {/* Test Search Section */}
+              <div className="border-t pt-8 space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label className="text-base flex items-center gap-2">
+                      <Search className="w-4 h-4" />
+                      Test Search
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Preview what papers the current queries and filters would find (last 7 days).
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={handleTestSearch} 
+                    disabled={isTestingSearch || newsletter.queries?.length === 0}
+                    size="sm"
+                    className="gap-2"
+                  >
+                    {isTestingSearch ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                    Run Test Search
+                  </Button>
+                </div>
+
+                <Alert className="bg-primary/5 border-primary/20">
+                  <Info className="h-4 w-4 text-primary" />
+                  <AlertDescription className="text-xs text-muted-foreground">
+                    <p>These are the raw papers retrieved from Semantic Scholar for each query <strong>before</strong> the AI filters them for relevance.</p>
+                  </AlertDescription>
+                </Alert>
+
+                {isTestingSearch && (
+                  <div className="flex flex-col items-center justify-center py-10 space-y-4">
+                    <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+                    <p className="text-sm text-muted-foreground animate-pulse">Searching Semantic Scholar database...</p>
+                  </div>
+                )}
+
+                {!isTestingSearch && testResults && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between px-1">
+                      <span className="text-sm font-medium">Results by Query</span>
+                      <Button variant="ghost" size="sm" onClick={() => setTestResults(null)} className="text-xs h-7">Clear Results</Button>
+                    </div>
+                    
+                    <ScrollArea className="h-[400px] w-full rounded-md border bg-muted/30 p-4">
+                      <div className="space-y-8">
+                        {testResults.map((group, groupIndex) => (
+                          <div key={groupIndex} className="space-y-4">
+                            <div className="flex items-center gap-2 sticky top-0 bg-transparent backdrop-blur-sm py-1 z-10 border-b">
+                              <Badge variant="outline" className="bg-background text-primary border-primary/20">
+                                Query {groupIndex + 1}
+                              </Badge>
+                              <span className="text-xs font-mono text-muted-foreground truncate italic">
+                                "{group.query}"
+                              </span>
+                              <Badge variant="secondary" className="ml-auto text-[10px]">
+                                {group.count < 5 ?group.count : `${group.count}+`} found
+                              </Badge>
+                            </div>
+
+                            <div className="space-y-6 pl-4">
+                              {group.papers && group.papers.length > 0 ? (
+                                group.papers.map((paper: any, paperIndex: number) => (
+                                  <div key={paper.paperId || paperIndex} className="space-y-2 pb-4 border-b last:border-0 last:pb-0">
+                                    <div className="flex items-start justify-between gap-4">
+                                      <h4 className="font-semibold text-sm leading-tight hover:text-primary transition-colors">
+                                        {paper.title}
+                                      </h4>
+                                      {paper.url && (
+                                        <a href={paper.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary shrink-0">
+                                          <ExternalLink className="w-4 h-4" />
+                                        </a>
+                                      )}
+                                    </div>
+                                    <div className="flex flex-wrap gap-2 items-center">
+                                      {paper.publicationVenue?.name && (
+                                        <Badge variant="outline" className="text-[10px] py-0 h-5">
+                                          {paper.publicationVenue.name}
+                                        </Badge>
+                                      )}
+                                      <span className="text-[10px] text-muted-foreground">
+                                        {paper.publicationDate || paper.year}
+                                      </span>
+                                      {paper.citationCount !== undefined && (
+                                        <span className="text-[10px] text-muted-foreground">
+                                          • {paper.citationCount} citations
+                                        </span>
+                                      )}
+                                    </div>
+                                    {paper.abstract && (
+                                      <p className="text-xs text-muted-foreground line-clamp-2 italic">
+                                        {paper.abstract}
+                                      </p>
+                                    )}
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="text-sm text-muted-foreground italic py-4">
+                                  No papers found for this query in the last 7 days.
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                )}
+
+                {!isTestingSearch && !testResults && (
+                  <div className="flex flex-col items-center justify-center py-10 text-center border-2 border-dashed rounded-lg bg-muted/20">
+                    <Search className="w-10 h-10 text-muted-foreground/30 mb-3" />
+                    <p className="text-sm text-muted-foreground max-w-[300px]">
+                      Click the button above to verify your search configuration.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </CollapsibleContent>
         </Collapsible>
-
-        {/* Test Search Section */}
-        <Card className="border-primary/20 bg-card">
-          <CardHeader withSeparator={false}>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Search className="w-5 h-5 text-primary" />
-                  Test Search
-                </CardTitle>
-                <CardDescription>
-                  Preview what papers the current queries and filters would find (last 7 days).
-                </CardDescription>
-              </div>
-              <Button 
-                onClick={handleTestSearch} 
-                disabled={isTestingSearch || newsletter.queries?.length === 0}
-                className="gap-2"
-              >
-                {isTestingSearch ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                Run Test Search
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Alert className="mb-6 bg-primary/5 border-primary/20">
-              <Info className="h-4 w-4 text-primary" />
-              <AlertDescription className="text-xs text-muted-foreground">
-                <p>These are the raw papers retrieved from Semantic Scholar for each query <strong>before</strong> the AI filters them for relevance.</p>
-              </AlertDescription>
-            </Alert>
-
-            {isTestingSearch && (
-              <div className="flex flex-col items-center justify-center py-10 space-y-4">
-                <RefreshCw className="w-8 h-8 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground animate-pulse">Searching Semantic Scholar database...</p>
-              </div>
-            )}
-
-            {!isTestingSearch && testResults && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between px-1">
-                  <span className="text-sm font-medium">Results by Query</span>
-                  <Button variant="ghost" size="sm" onClick={() => setTestResults(null)} className="text-xs h-7">Clear Results</Button>
-                </div>
-                
-                <ScrollArea className="h-[500px] w-full rounded-md border bg-card p-4">
-                  <div className="space-y-8">
-                    {testResults.map((group, groupIndex) => (
-                      <div key={groupIndex} className="space-y-4">
-                        <div className="flex items-center gap-2 sticky top-0 bg-card py-1 z-10 border-b">
-                          <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
-                            Query {groupIndex + 1}
-                          </Badge>
-                          <span className="text-xs font-mono text-muted-foreground truncate italic">
-                            "{group.query}"
-                          </span>
-                          <Badge variant="secondary" className="ml-auto text-[10px]">
-                            {group.count < 5 ?group.count: `${group.count}+`} found
-                          </Badge>
-                        </div>
-
-                        <div className="space-y-6 pl-4">
-                          {group.papers && group.papers.length > 0 ? (
-                            group.papers.map((paper: any, paperIndex: number) => (
-                              <div key={paper.paperId || paperIndex} className="space-y-2 pb-4 border-b last:border-0 last:pb-0">
-                                <div className="flex items-start justify-between gap-4">
-                                  <h4 className="font-semibold text-sm leading-tight hover:text-primary transition-colors">
-                                    {paper.title}
-                                  </h4>
-                                  {paper.url && (
-                                    <a href={paper.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary shrink-0">
-                                      <ExternalLink className="w-4 h-4" />
-                                    </a>
-                                  )}
-                                </div>
-                                <div className="flex flex-wrap gap-2 items-center">
-                                  {paper.publicationVenue?.name && (
-                                    <Badge variant="outline" className="text-[10px] py-0 h-5">
-                                      {paper.publicationVenue.name}
-                                    </Badge>
-                                  )}
-                                  <span className="text-[10px] text-muted-foreground">
-                                    {paper.publicationDate || paper.year}
-                                  </span>
-                                  {paper.citationCount !== undefined && (
-                                    <span className="text-[10px] text-muted-foreground">
-                                      • {paper.citationCount} citations
-                                    </span>
-                                  )}
-                                </div>
-                                {paper.abstract && (
-                                  <p className="text-xs text-muted-foreground line-clamp-2 italic">
-                                    {paper.abstract}
-                                  </p>
-                                )}
-                              </div>
-                            ))
-                          ) : (
-                            <p className="text-sm text-muted-foreground italic py-4">
-                              No papers found for this query in the last 7 days.
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </div>
-            )}
-
-            {!isTestingSearch && !testResults && (
-              <div className="flex flex-col items-center justify-center py-10 text-center border-2 border-dashed rounded-lg bg-card/50">
-                <Search className="w-10 h-10 text-muted-foreground/30 mb-3" />
-                <p className="text-sm text-muted-foreground max-w-[300px]">
-                  Click the button above to verify your search configuration.
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
         {/* Save Changes */}
         <div className="flex justify-end py-6">

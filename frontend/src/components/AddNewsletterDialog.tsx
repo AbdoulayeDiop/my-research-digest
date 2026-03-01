@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Lightbulb } from "lucide-react";
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -12,6 +12,8 @@ import {
 } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+import { Textarea } from "./ui/textarea";
+import { Alert, AlertDescription } from "./ui/alert";
 
 import { useAxios } from "../lib/axios";
 
@@ -36,14 +38,16 @@ interface User {
 
 interface AddNewsletterDialogProps {
   user: User;
+  onSuccess?: () => void;
 }
 
-export function AddNewsletterDialog({ user }: AddNewsletterDialogProps) {
+export function AddNewsletterDialog({ user, onSuccess }: AddNewsletterDialogProps) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     topic: "",
+    description: "",
   });
   const axios = useAxios();
   const navigate = useNavigate();
@@ -61,6 +65,7 @@ export function AddNewsletterDialog({ user }: AddNewsletterDialogProps) {
       setIsLoading(true);
       const response = await axios.post(`/newsletters`, {
         topic: formData.topic,
+        description: formData.description,
         userId: user.sub,
         userEmail: user.email,
         userName: user.name,
@@ -68,8 +73,13 @@ export function AddNewsletterDialog({ user }: AddNewsletterDialogProps) {
       setOpen(false);
       setFormData({
         topic: "",
+        description: "",
       });
-      navigate(`/newsletters/${response.data._id}/settings`);
+      
+      if (onSuccess) {
+        onSuccess();
+      }
+      navigate(`/`);
     } catch (err) {
       setError("Failed to create newsletter. Please try again.");
       console.error("Error creating newsletter:", err);
@@ -90,12 +100,12 @@ export function AddNewsletterDialog({ user }: AddNewsletterDialogProps) {
           Create Newsletter
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Create Scientific Newsletter</DialogTitle>
             <DialogDescription>
-              Enter the topic for your new AI-powered research digest. You can configure more settings after creation.
+              Enter the topic and description for your new AI-powered research digest.
             </DialogDescription>
           </DialogHeader>
 
@@ -109,6 +119,24 @@ export function AddNewsletterDialog({ user }: AddNewsletterDialogProps) {
                 placeholder="e.g., Mixed Data Clustering"
                 required
               />
+            </div>
+
+            <div className="grid gap-3">
+              <Label htmlFor="description">Description <span className="text-primary font-medium text-xs">(Recommended)</span></Label>
+              <Textarea
+                id="description"
+                placeholder="Describe what this newsletter is about in detail to improve AI accuracy..."
+                value={formData.description}
+                onChange={(e) => handleInputChange("description", e.target.value)}
+                rows={3}
+              />
+
+              <Alert className="bg-chart-2/5 border-chart-2/20 py-2">
+                <Lightbulb className="h-4 w-4" style={{ color: 'var(--chart-2)'}} />
+                <AlertDescription className="text-[11px] leading-relaxed">
+                  <p>The <strong>Description</strong> helps the AI generate better search queries and filter for relevance. A clear description ensures you only receive research tailored to your specific needs.</p>
+                </AlertDescription>
+              </Alert>
             </div>
           </div>
 
@@ -125,4 +153,4 @@ export function AddNewsletterDialog({ user }: AddNewsletterDialogProps) {
       </DialogContent>
     </Dialog>
   );
-  }
+}

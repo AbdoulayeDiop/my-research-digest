@@ -7,12 +7,30 @@ from newsletter_creator import generate_queries
 from datetime import datetime, timedelta
 import logging
 import asyncio
+from contextlib import asynccontextmanager
 from auth import auth_verifier
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-app = FastAPI(title="My Research Digest Python Service")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Start the background newsletter generation loop
+    from worker import main as run_newsletter_loop
+    logging.info("Starting background newsletter generation loop...")
+    loop_task = asyncio.create_task(run_newsletter_loop())
+    
+    yield
+    
+    # Shutdown: Cancel the background task
+    logging.info("Shutting down background newsletter generation loop...")
+    loop_task.cancel()
+    try:
+        await loop_task
+    except asyncio.CancelledError:
+        logging.info("Background newsletter generation loop cancelled.")
+
+app = FastAPI(title="My Research Digest Python Service", lifespan=lifespan)
 
 # Add CORS middleware
 app.add_middleware(

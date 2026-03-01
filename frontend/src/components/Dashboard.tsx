@@ -79,7 +79,7 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
   }, [newsletters, searchQuery]);
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto py-10 px-6">
       {/* Header */}
       <div className="mb-8">
         {user?.name? <h1 className="mb-2">Welcome back, {user.name.split(' ')[0]}!</h1>: <h1 className="mb-2">Welcome to My Research Digest</h1>}
@@ -102,7 +102,7 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
         </div>
         
         {/* Create Newsletter Button */}
-        <AddNewsletterDialog user={user} />
+        <AddNewsletterDialog user={user} onSuccess={fetchNewsletters} />
       </div>)}
 
       {/* Newsletter Stats */}
@@ -136,7 +136,7 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
             {searchQuery ? 'No newsletters match your search.' : 'No scientific newsletters created yet.'}
           </p>
           {!searchQuery && (
-            <AddNewsletterDialog user={user} />
+            <AddNewsletterDialog user={user} onSuccess={fetchNewsletters} />
           )}
         </div>
       ) : (

@@ -24,7 +24,7 @@ An AI-powered research digest that automatically synthesizes scientific papers f
 - **Role**: User dashboard, newsletter configuration, and issue viewing.
 - **Tech Stack**: Vite, React, Shadcn UI, Lucide React, Sonner (Toasts).
 - **Key Features**:
-  - `NewsletterSettings`: Direct integration with the Python backend for query generation and search testing.
+  - `NewsletterPage`: A unified, tabbed interface consolidating `IssuesList` and `NewsletterSettings` for a better user experience.
   - `Dashboard`: Lists newsletters with status and strategy badges.
   - `useAxios`: Hook supporting multiple base URLs (Node vs. Python).
 

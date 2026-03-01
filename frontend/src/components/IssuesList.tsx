@@ -34,9 +34,10 @@ interface Newsletter {
 interface IssuesListProps {
   onBack: () => void;
   onViewIssue: (issue: Issue, newsletter: Newsletter) => void;
+  showHeader?: boolean;
 }
 
-export function IssuesList({ onBack, onViewIssue }: IssuesListProps) {
+export function IssuesList({ onBack, onViewIssue, showHeader = true }: IssuesListProps) {
   const location = useLocation();
   const { newsletterId } = useParams<{ newsletterId: string }>();
 
@@ -133,33 +134,7 @@ export function IssuesList({ onBack, onViewIssue }: IssuesListProps) {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <Button
-          variant="ghost"
-          onClick={onBack}
-          className="mb-4 gap-2"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Dashboard
-        </Button>
-
-        <div className="mb-4">
-          <h1 className="mb-2">{newsletter.topic}</h1>
-          {newsletter.description && (
-            <p className="text-muted-foreground mb-4">
-              {newsletter.description}
-            </p>
-          )}
-
-          {newsletter.field && (
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary">{newsletter.field}</Badge>
-            </div>
-          )}
-        </div>
-      </div>
+    <div className={`max-w-6xl mx-auto ${showHeader ? 'p-6' : 'py-6'}`}>
 
       {/* Issues Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">

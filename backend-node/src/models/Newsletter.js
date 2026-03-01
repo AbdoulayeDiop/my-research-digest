@@ -25,7 +25,7 @@ const NewsletterSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['active', 'inactive'],
-    default: 'inactive'
+    default: 'active'
   },
   rankingStrategy: {
     type: String,

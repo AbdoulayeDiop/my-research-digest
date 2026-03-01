@@ -1,5 +1,5 @@
-import { Calendar, BookOpen, Hash, Eye, Settings } from "lucide-react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card";
+import { Calendar, BookOpen, Settings, ArrowRight } from "lucide-react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, CardAction } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { useNavigate } from "react-router-dom";
@@ -32,94 +32,77 @@ export function NewsletterCard({ newsletter, onView }: NewsletterCardProps) {
     navigate(`/newsletters/${newsletter._id}/settings`);
   };
 
-  const formattedCreatedAt = new Date(newsletter.createdAt).toLocaleDateString('en-US', {
+  const displayDate = newsletter.lastIssueDate || newsletter.createdAt;
+  const formattedDisplayDate = new Date(displayDate).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
-
-  const formattedLastIssue = newsletter.lastIssueDate
-    ? new Date(newsletter.lastIssueDate).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      })
-    : 'No issues published yet';
+  const dateLabel = newsletter.lastIssueDate ? "Last issue" : "Created";
 
   return (
     <Card 
-      className="h-full shadow-md hover:shadow-lg transition-shadow cursor-pointer group bg-card/70"
+      className="h-full hover:shadow-lg transition-shadow duration-300 cursor-pointer group bg-card/4 hover:bg-card/50 overflow-hidden relative"
       onClick={handleCardClick}
     >
-      <CardHeader className="pb-4">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="font-medium line-clamp-1 group-hover:text-primary transition-colors">
-              {newsletter.topic}
-            </CardTitle>
-            
-            <span className="text-sm text-muted-foreground mt-2">
-              Last issue: {formattedLastIssue}
-            </span>
-            
-        <div className="flex flex-wrap gap-2 mt-2">
+      <CardHeader className="pb-0 pt-5 px-5" withSeparator={false}>
+        <CardTitle className="font-semibold text-lg line-clamp-1 group-hover:text-primary transition-colors">
+          {newsletter.topic}
+        </CardTitle>
+        <CardAction>
           <Badge 
             variant={newsletter.status === 'active' ? "default" : "secondary"}
-            className={newsletter.status === 'active' ? "bg-green-600 hover:bg-green-700" : ""}
+            className={newsletter.status === 'active' ? "bg-green-600/10 text-green-600 hover:bg-green-600/20 border-green-600/20" : ""}
           >
             {newsletter.status}
           </Badge>
-          <Badge variant="outline">
-            {newsletter.rankingStrategy === 'author_based' ? 'Author Ranking' : 'Semantic Ranking'}
-          </Badge>
-        </div>
-          </div>
-        </div>
+        </CardAction>
       </CardHeader>
       
-      <CardContent className="pb-4 space-y-3">
+      <CardContent className="pb-3 px-5 space-y-3">
         {newsletter.description && (
-              <CardDescription className="mt-2 line-clamp-2">
-                {newsletter.description}
-              </CardDescription>
-            )}
+          <CardDescription className="line-clamp-2 text-sm leading-relaxed">
+            {newsletter.description}
+          </CardDescription>
+        )}
         
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <BookOpen className="w-4 h-4" />
-          <span>{newsletter.totalIssues || 0} issues published</span>
-        </div>
-        
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Calendar className="w-4 h-4" />
-          <span>Created: {formattedCreatedAt}</span>
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>{newsletter.totalIssues || 0} issues</span>
+          </div>
+          
+          <div className="flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5" />
+            <span>{dateLabel}: {formattedDisplayDate}</span>
+          </div>
         </div>
       </CardContent>
       
-      <CardFooter className="pt-0 mt-auto">
-        <div className="flex justify-end items-center w-full">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2 transition-opacity"
-              onClick={handleSettingsClick}
-            >
-              <Settings className="w-4 h-4" />
-              Settings
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2 transition-opacity"
-              onClick={(e) => {
-                e.stopPropagation();
-                onView(newsletter);
-              }}
-            >
-              <Eye className="w-4 h-4" />
-              View Issues
-            </Button>
-          </div>
+      <CardFooter className="mt-auto border-t border-muted/20 bg-muted/5">
+        <div className="flex justify-between items-center w-full">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 opacity-0 group-hover:opacity-100 transition-opacity duration-200 gap-2 text-muted-foreground"
+            onClick={handleSettingsClick}
+          >
+            <Settings className="w-4 h-4" />
+            <span className="text-xs font-medium">Settings</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="group/btn gap-2 text-primary font-medium hover:bg-primary/5 px-2"
+            onClick={(e) => {
+              e.stopPropagation();
+              onView(newsletter);
+            }}
+          >
+            View Issues
+            <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover/btn:translate-x-1" />
+          </Button>
         </div>
       </CardFooter>
     </Card>
