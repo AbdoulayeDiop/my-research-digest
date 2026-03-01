@@ -114,15 +114,14 @@ export function NewsletterPage() {
         </TabsList>
 
         <TabsContent value="issues" className="mt-0">
-          <IssuesList 
-            onBack={() => navigate("/")} 
+          <IssuesList
             onViewIssue={(issue) => navigate(`/issues/${issue._id}`)}
             showHeader={false}
           />
         </TabsContent>
 
         <TabsContent value="settings" className="mt-0">
-          <NewsletterSettings showHeader={false} />
+          <NewsletterSettings />
         </TabsContent>
       </Tabs>
     </div>

@@ -19,16 +19,6 @@ import { useAxios } from "../lib/axios";
 
 import { useNavigate } from "react-router-dom";
 
-interface Newsletter {
-  _id: string; // MongoDB uses _id
-  topic: string;
-  description?: string;
-  field?: string;
-  createdAt: string; // Changed from createdDate
-  totalIssues: number;
-  lastIssueDate?: string; // New field from aggregation
-}
-
 interface User {
   _id: string; // MongoDB user ID
   sub?: string;
@@ -63,7 +53,7 @@ export function AddNewsletterDialog({ user, onSuccess }: AddNewsletterDialogProp
 
     try {
       setIsLoading(true);
-      const response = await axios.post(`/newsletters`, {
+      await axios.post(`/newsletters`, {
         topic: formData.topic,
         description: formData.description,
         userId: user.sub,

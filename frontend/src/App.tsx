@@ -31,14 +31,6 @@ function AppContent() {
     navigate(`/newsletters/${newsletter._id}`, { state: { newsletter } });
   };
 
-  const handleViewIssue = (issue: any, newsletter: any) => {
-    navigate(`/issues/${issue._id}`, { state: { issue, newsletter } });
-  };
-
-  const handleBackToNewsletters = () => {
-    navigate('/');
-  };
-
   const handleBackToIssues = (newsletter: any) => {
     navigate(`/newsletters/${newsletter._id}`, { state: { newsletter } });
   };

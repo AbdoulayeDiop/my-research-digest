@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, useParams } from 'react-router-dom';
-import { ArrowLeft, Calendar, FileText, EyeOff, Eye } from "lucide-react";
+import { Calendar, FileText, EyeOff, Eye } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
@@ -32,12 +32,11 @@ interface Newsletter {
 }
 
 interface IssuesListProps {
-  onBack: () => void;
   onViewIssue: (issue: Issue, newsletter: Newsletter) => void;
   showHeader?: boolean;
 }
 
-export function IssuesList({ onBack, onViewIssue, showHeader = true }: IssuesListProps) {
+export function IssuesList({ onViewIssue, showHeader = true }: IssuesListProps) {
   const location = useLocation();
   const { newsletterId } = useParams<{ newsletterId: string }>();
 

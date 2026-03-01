@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Save, Trash2, RefreshCw, AlertTriangle, CheckCircle2, XCircle, Info, Lightbulb, ChevronDown, ChevronUp, Search, ExternalLink } from "lucide-react";
+import { Save, Trash2, RefreshCw, AlertTriangle, CheckCircle2, XCircle, Info, Lightbulb, ChevronDown, ChevronUp, Search, ExternalLink } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -26,7 +26,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "./ui/alert-dialog";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 interface Newsletter {
   _id: string;
@@ -59,7 +58,7 @@ const PUBLICATION_TYPES = [
   'BookSection'
 ];
 
-export function NewsletterSettings({ showHeader = true }: { showHeader?: boolean }) {
+export function NewsletterSettings() {
   const { newsletterId } = useParams<{ newsletterId: string }>();
   const navigate = useNavigate();
   
