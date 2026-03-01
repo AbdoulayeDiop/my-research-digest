@@ -1,13 +1,15 @@
-import { Calendar, BookOpen, Hash, Trash2, Eye } from "lucide-react";
+import { Calendar, BookOpen, Hash, Eye, Settings } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
+import { useNavigate } from "react-router-dom";
 
 interface Newsletter {
   _id: string; // MongoDB uses _id
   topic: string;
   description?: string;
-  field?: string;
+  status: 'active' | 'inactive';
+  rankingStrategy: 'author_based' | 'embedding_based';
   createdAt: string; // Changed from createdDate
   totalIssues: number;
   lastIssueDate?: string; // New field from aggregation
@@ -15,18 +17,19 @@ interface Newsletter {
 
 interface NewsletterCardProps {
   newsletter: Newsletter;
-  onDelete: (id: string) => void;
   onView: (newsletter: Newsletter) => void;
 }
 
-export function NewsletterCard({ newsletter, onDelete, onView }: NewsletterCardProps) {
+export function NewsletterCard({ newsletter, onView }: NewsletterCardProps) {
+  const navigate = useNavigate();
+  
   const handleCardClick = () => {
     onView(newsletter);
   };
 
-  const handleDeleteClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click when delete button is clicked
-    onDelete(newsletter._id);
+  const handleSettingsClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/newsletters/${newsletter._id}/settings`);
   };
 
   const formattedCreatedAt = new Date(newsletter.createdAt).toLocaleDateString('en-US', {
@@ -54,27 +57,32 @@ export function NewsletterCard({ newsletter, onDelete, onView }: NewsletterCardP
             <CardTitle className="font-medium line-clamp-1 group-hover:text-primary transition-colors">
               {newsletter.topic}
             </CardTitle>
-            {newsletter.description && (
-              <CardDescription className="mt-2 line-clamp-2">
-                {newsletter.description}
-              </CardDescription>
-            )}
+            
             <span className="text-sm text-muted-foreground mt-2">
               Last issue: {formattedLastIssue}
             </span>
+            
+        <div className="flex flex-wrap gap-2 mt-2">
+          <Badge 
+            variant={newsletter.status === 'active' ? "default" : "secondary"}
+            className={newsletter.status === 'active' ? "bg-green-600 hover:bg-green-700" : ""}
+          >
+            {newsletter.status}
+          </Badge>
+          <Badge variant="outline">
+            {newsletter.rankingStrategy === 'author_based' ? 'Author Ranking' : 'Semantic Ranking'}
+          </Badge>
+        </div>
           </div>
         </div>
       </CardHeader>
       
       <CardContent className="pb-4 space-y-3">
-        {newsletter.field && (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Hash className="w-4 h-4" />
-            <Badge variant="secondary" className="shrink-0">
-              {newsletter.field}
-            </Badge>
-          </div>
-        )}
+        {newsletter.description && (
+              <CardDescription className="mt-2 line-clamp-2">
+                {newsletter.description}
+              </CardDescription>
+            )}
         
         <div className="flex items-center gap-2 text-muted-foreground">
           <BookOpen className="w-4 h-4" />
@@ -93,7 +101,16 @@ export function NewsletterCard({ newsletter, onDelete, onView }: NewsletterCardP
             <Button
               variant="outline"
               size="sm"
-              className="gap-2 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="gap-2 transition-opacity"
+              onClick={handleSettingsClick}
+            >
+              <Settings className="w-4 h-4" />
+              Settings
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 transition-opacity"
               onClick={(e) => {
                 e.stopPropagation();
                 onView(newsletter);
@@ -101,14 +118,6 @@ export function NewsletterCard({ newsletter, onDelete, onView }: NewsletterCardP
             >
               <Eye className="w-4 h-4" />
               View Issues
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleDeleteClick}
-              className="gap-2 bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              <Trash2 className="w-4 h-4" />
-              Delete
             </Button>
           </div>
         </div>

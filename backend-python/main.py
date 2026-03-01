@@ -68,6 +68,10 @@ def create_issue_and_papers(api_client, newsletter, newsletter_data, papers):
 async def process_newsletter(api_client, newsletter):
     logging.info(f"Processing newsletter: {newsletter.get('topic', 'N/A')}")
 
+    if newsletter.get('status') == 'inactive':
+        logging.info(f"Newsletter '{newsletter.get('topic')}' is inactive. Skipping.")
+        return
+
     last_search = newsletter.get('lastSearch')
     
     # If lastSearch is missing, try to get the date from the latest issue
@@ -113,7 +117,20 @@ async def process_newsletter(api_client, newsletter):
             user_email = user_info.get('email')
             user_name = user_info.get('name', 'user')
 
-    result = await NewsletterCreator().create_newsletter(newsletter['topic'], start_date, end_date=end_date)
+    queries = newsletter.get('queries', [])
+    ranking_strategy = newsletter.get('rankingStrategy', 'author_based')
+    filters = newsletter.get('filters', {})
+
+    result = await NewsletterCreator(api_client=api_client).create_newsletter(
+        newsletter['topic'], 
+        start_date, 
+        description=newsletter.get('description', ""),
+        end_date=end_date,
+        queries=queries,
+        ranking_strategy=ranking_strategy,
+        filters=filters,
+        newsletter_id=newsletter['_id']
+    )
     
     if not result or len(result.get('papers', [])) == 0:
         logging.warning(

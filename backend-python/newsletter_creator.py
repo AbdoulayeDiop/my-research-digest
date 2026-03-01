@@ -31,32 +31,52 @@ def get_paper_score(paper: Dict) -> float:
 
 
 class NewsletterCreator:
-    def __init__(self, model: str = "gpt-5-mini", temperature: float = 0):
+    def __init__(self, model: str = "gpt-5-mini", temperature: float = 0, api_client=None):
         self.model = model
         self.temperature = temperature
         self.client = OpenAI()
+        self.api_client = api_client
 
-    def search(self, topic, description, start_date, end_date=None, max_papers: int = 10):
-        print("Generating search queries...")
-        queries = generate_queries(topic, description, model=self.model)
-        print("Search queries generated:", queries)
+    def search(self, topic, description, start_date, end_date=None, max_papers: int = 10, queries=None, filters=None, newsletter_id=None):
+        if not queries or len(queries) == 0:
+            print("No stored queries found. Generating search queries...")
+            queries = generate_queries(topic, description, model=self.model)
+            print("Search queries generated:", queries)
+            # Update the newsletter with the generated queries if api_client and newsletter_id are provided
+            if self.api_client and newsletter_id:
+                try:
+                    self.api_client.update_newsletter(newsletter_id, {"queries": queries})
+                    print(f"Newsletter {newsletter_id} updated with generated queries.")
+                except Exception as e:
+                    print(f"Failed to update newsletter {newsletter_id} with queries: {e}")
+        else:
+            print("Using stored search queries:", queries)
+            
         semantic_searcher = SemanticSearch()
         results = []
         for query in queries:
             results.extend(semantic_searcher.search(
-                query, start_date, max_papers, end_date=end_date))
+                query, start_date, max_papers, end_date=end_date, filters=filters))
             time.sleep(1) # Add a 1-second delay to respect API rate limits
         return results
 
-    async def create_newsletter(self, topic: str, start_date: str, description: str="", nb_papers: int = 5, end_date: str = None, max_papers: int = 10) -> NewsletterWriterOutput:
-        print("Searching for papers...")
-        papers = self.search(topic, description=description, start_date=start_date, end_date=end_date, max_papers=max_papers)
+    async def create_newsletter(self, topic: str, start_date: str, description: str="", nb_papers: int = 5, end_date: str = None, max_papers: int = 10, queries=None, ranking_strategy='author_based', filters=None, newsletter_id=None) -> NewsletterWriterOutput:
+        print(f"Searching for papers (strategy: {ranking_strategy}, filters: {filters})...")
+        papers = self.search(topic, description=description, start_date=start_date, end_date=end_date, max_papers=max_papers, queries=queries, filters=filters, newsletter_id=newsletter_id)
         if papers:
             print(f"Found {len(papers)} papers. Filtering for relevance...")
             papers = await self.filter_papers(topic, papers, description=description)
             if len(papers) > 0:
                 print(f"{len(papers)} papers are relevant. Analyzing papers...")
-                papers = sorted(papers, key=get_paper_score, reverse=True)[:nb_papers]
+                
+                if ranking_strategy == 'author_based':
+                    papers = sorted(papers, key=get_paper_score, reverse=True)[:nb_papers]
+                else:
+                    # embedding_based: Semantic Scholar already returns results sorted by relevance
+                    # We could implement a custom embedding sort here, but for now we'll take the top ones from Semantic Scholar
+                    # after filtering.
+                    papers = papers[:nb_papers]
+                    
                 analyzes = await self.analyze_papers(topic, papers, description=description)
                 papers_with_analysis = [{"paper": paper, "analysis": analysis.model_dump(
                 )} for paper, analysis in zip(papers, analyzes)]

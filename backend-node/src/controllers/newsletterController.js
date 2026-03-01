@@ -27,7 +27,7 @@ exports.createNewsletter = async (req, res) => {
     }
     const auth0Id = req.auth.payload.sub;
 
-    const { topic, description, field } = req.body;
+    const { topic } = req.body;
     
     // Fetch user details from Auth0 or create if not exists
     const user = await User.findOneAndUpdate(
@@ -35,7 +35,11 @@ exports.createNewsletter = async (req, res) => {
       { $set: { email: req.auth.payload.email, name: req.auth.payload.name } }, // Assuming email/name are in JWT
       { new: true, upsert: true }
     );
-    const newNewsletter = new Newsletter({ userId: user._id, topic, description, field });
+
+    const newNewsletter = new Newsletter({ 
+      userId: user._id, 
+      topic
+    });
     await newNewsletter.save();
 
     // Send confirmation email
@@ -101,8 +105,10 @@ exports.getAuthenticatedUserNewsletters = async (req, res) => {
           _id: 1,
           topic: 1,
           description: 1,
-          field: 1,
+          status: 1,
+          rankingStrategy: 1,
           lastSearch: 1,
+          filters: 1,
           createdAt: 1,
           totalIssues: 1,
           lastIssueDate: 1,
@@ -171,10 +177,10 @@ exports.getNewsletterById = async (req, res) => {
 // Update a newsletter
 exports.updateNewsletter = async (req, res) => {
   try {
-    const { topic, description, field, lastSearch } = req.body;
+    const { description, status, rankingStrategy, queries, lastSearch, filters } = req.body;
     const updatedNewsletter = await Newsletter.findByIdAndUpdate(
       req.params.id,
-      { topic, description, field, lastSearch },
+      { description, status, rankingStrategy, queries, lastSearch, filters },
       { new: true } // Return the updated document
     );
     if (!updatedNewsletter) {
@@ -184,6 +190,11 @@ exports.updateNewsletter = async (req, res) => {
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
+};
+
+// Generate search queries for a newsletter (Deprecated: Use Python backend)
+exports.generateQueries = async (req, res) => {
+  res.status(410).json({ message: 'This endpoint is deprecated. Please use the Python backend to generate queries.' });
 };
 
 // Delete a newsletter
@@ -227,5 +238,89 @@ exports.countNewsletters = async (req, res) => {
     res.status(200).json({ count });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+const FIELDS = "title,authors,abstract,url,publicationVenue,publicationDate,citationCount,referenceCount,isOpenAccess,openAccessPdf,authors.authorId,authors.name,authors.affiliations,authors.paperCount,authors.citationCount,authors.hIndex,externalIds";
+const axios = require('axios');
+
+// Test search with current newsletter settings
+exports.testSearch = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const newsletter = await Newsletter.findById(id);
+    if (!newsletter) {
+      return res.status(404).json({ message: 'Newsletter not found' });
+    }
+
+    const { queries, filters } = newsletter;
+    
+    // Use stored queries
+    let searchQueries = queries || [];
+    if (searchQueries.length === 0) {
+      return res.status(400).json({ message: 'No search queries found. Please generate or add queries first.' });
+    }
+
+    const apiKey = process.env.SEMANTIC_SCHOLAR_API_KEY;
+    const headers = apiKey ? { "x-api-key": apiKey } : {};
+
+    const allResults = [];
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const startDate = sevenDaysAgo.toISOString().split('T')[0];
+
+    // Perform search for each query (limit to 5 per query for testing)
+    for (const query of searchQueries) {
+      const params = {
+        query,
+        publicationDateOrYear: `${startDate}:`,
+        limit: 5,
+        fields: FIELDS
+      };
+
+      if (filters) {
+        if (filters.venues && filters.venues.length > 0) {
+          params.venue = filters.venues.join(",");
+        }
+        if (filters.publicationTypes && filters.publicationTypes.length > 0) {
+          params.publicationTypes = filters.publicationTypes.join(",");
+        }
+        if (filters.minCitationCount) {
+          params.minCitationCount = filters.minCitationCount.toString();
+        }
+        if (filters.openAccessPdf) {
+          params.openAccessPdf = "";
+        }
+      }
+
+      try {
+        const response = await axios.get("https://api.semanticscholar.org/graph/v1/paper/search", {
+          params,
+          headers
+        });
+        
+        if (response.status === 200 && response.data.data) {
+          allResults.push(...response.data.data);
+        }
+      } catch (err) {
+        console.error(`Search error for query "${query}":`, err.message);
+      }
+    }
+
+    // De-duplicate by paperId
+    const seen = new Set();
+    const uniqueResults = allResults.filter(paper => {
+      const duplicate = seen.has(paper.paperId);
+      seen.add(paper.paperId);
+      return !duplicate;
+    });
+
+    res.json({ 
+      count: uniqueResults.length,
+      papers: uniqueResults 
+    });
+  } catch (error) {
+    console.error('Error in testSearch:', error);
+    res.status(500).json({ message: 'Failed to perform test search.' });
   }
 };

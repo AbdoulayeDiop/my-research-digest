@@ -3,3 +3,5 @@ numpy
 python-dotenv
 pydantic
 openai
+fastapi
+pyjwt

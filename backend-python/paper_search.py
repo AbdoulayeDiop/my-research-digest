@@ -13,7 +13,7 @@ class PaperSearch(ABC):
     Abstract base class for a paper searcher.
     """
     @abstractmethod
-    def search(self, query: str, start_date: str, nb_papers: int, end_date: Optional[str] = None) -> List[Dict]:
+    def search(self, query: str, start_date: str, nb_papers: int, end_date: Optional[str] = None, filters: Optional[Dict] = None) -> List[Dict]:
         """
         Searches for papers matching the query and date range.
 
@@ -22,6 +22,7 @@ class PaperSearch(ABC):
             start_date: The start date of the search range (YYYY-MM-DD).
             nb_papers: The maximum number of papers to return.
             end_date: The end date of the search range (YYYY-MM-DD). Optional.
+            filters: Search filters.
 
         Returns:
             A list of dictionaries, where each dictionary represents a paper.
@@ -41,7 +42,7 @@ class SemanticSearch(PaperSearch):
         else:
             logging.warning("SemanticSearch initialized without API key. Rate limits may apply.")
     
-    def search(self, query: str, start_date: str, nb_papers: int, end_date: Optional[str] = None) -> List[Dict]:
+    def search(self, query: str, start_date: str, nb_papers: int, end_date: Optional[str] = None, filters: Optional[Dict] = None) -> List[Dict]:
         """
         Searches for papers using the Semantic Scholar API.
 
@@ -50,15 +51,35 @@ class SemanticSearch(PaperSearch):
             start_date: The start date of the search range (YYYY-MM-DD).
             nb_papers: The maximum number of papers to return.
             end_date: The end date of the search range (YYYY-MM-DD). Optional.
+            filters: A dictionary containing search filters (venues, publicationTypes, minCitationCount, openAccessPdf).
 
         Returns:
             A list of dictionaries, where each dictionary represents a paper.
         """
-        url = f"https://api.semanticscholar.org/graph/v1/paper/search?query={query}&publicationDateOrYear={start_date}:{end_date or ''}&limit={nb_papers}&fields={FIELDS}"
+        params = {
+            "query": query,
+            "publicationDateOrYear": f"{start_date}:{end_date or ''}",
+            "limit": nb_papers,
+            "fields": FIELDS
+        }
+
+        if filters:
+            if filters.get("venues"):
+                params["venue"] = ",".join(filters["venues"])
+            
+            if filters.get("publicationTypes"):
+                params["publicationTypes"] = ",".join(filters["publicationTypes"])
+            
+            if filters.get("minCitationCount"):
+                params["minCitationCount"] = str(filters["minCitationCount"])
+            
+            if filters.get("openAccessPdf"):
+                params["openAccessPdf"] = "" # Presence of key means true for this API
+
         headers = {"x-api-key": self.api_key}
 
-        logging.info(f"Searching for papers with URL: {url}")
-        response = requests.get(url, headers=headers)
+        logging.info(f"Searching for papers with query: {query} and filters: {filters}")
+        response = requests.get("https://api.semanticscholar.org/graph/v1/paper/search", params=params, headers=headers)
         
         if response.status_code == 200:
             data = response.json().get('data', [])

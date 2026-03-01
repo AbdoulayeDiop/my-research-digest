@@ -2,6 +2,7 @@ import Navbar from "./components/Navbar";
 import { Dashboard } from "./components/Dashboard";
 import { IssuesList } from "./components/IssuesList";
 import { IssueDetail } from "./components/IssueDetail";
+import { NewsletterSettings } from "./components/NewsletterSettings";
 import { AdminDashboard } from "./components/AdminDashboard";
 import { LandingPage } from "./components/LandingPage";
 import { StatusPage } from "./components/StatusPage";
@@ -13,6 +14,7 @@ import { Footer } from "./components/Footer";
 import { useUserSync } from "./hooks/useUserSync";
 import { HelmetProvider } from 'react-helmet-async';
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { Toaster } from "sonner";
 
 interface User {
   _id: string; // MongoDB user ID
@@ -55,11 +57,13 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Toaster position="bottom-right" expand={true} richColors />
       <Navbar user={syncedUser as User} onSignOut={() => logout({ logoutParams: { returnTo: window.location.origin } })} onSignIn={loginWithRedirect} />
       <main>
         <Routes>
           <Route path="/" element={isAuthenticated ? <Dashboard user={syncedUser as User} onViewNewsletter={handleViewNewsletter} /> : <LandingPage onGetStarted={loginWithRedirect} onSignIn={loginWithRedirect} isAuthenticated={isAuthenticated} />} />
           <Route path="/newsletters/:newsletterId" element={<ProtectedRoute component={IssuesList} onBack={handleBackToNewsletters} onViewIssue={handleViewIssue} />} />
+          <Route path="/newsletters/:newsletterId/settings" element={<ProtectedRoute component={NewsletterSettings} />} />
           <Route path="/issues/:issueId" element={<ProtectedRoute component={IssueDetail} onBack={handleBackToIssues} />} />
           <Route path="/status/:type" element={<StatusPage />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />

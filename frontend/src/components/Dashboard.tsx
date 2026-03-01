@@ -4,22 +4,13 @@ import { Input } from "./ui/input";
 import { NewsletterCard } from "./NewsletterCard";
 import { AddNewsletterDialog } from "./AddNewsletterDialog";
 import { useAxios } from "../lib/axios";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "./ui/alert-dialog";
 
 interface Newsletter {
   _id: string; // MongoDB uses _id
   topic: string;
   description?: string;
-  field?: string;
+  status: 'active' | 'inactive';
+  rankingStrategy: 'author_based' | 'embedding_based';
   createdAt: string; // Changed from createdDate
   totalIssues: number;
   lastIssueDate?: string; // New field from aggregation
@@ -42,8 +33,6 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [newsletterToDelete, setNewsletterToDelete] = useState<string | null>(null);
   const axios = useAxios();
 
   const fetchNewsletters = async () => {
@@ -85,33 +74,9 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
     const query = searchQuery.toLowerCase();
     return sortedNewsletters.filter(newsletter =>
       newsletter.topic.toLowerCase().includes(query) ||
-      (newsletter.description && newsletter.description.toLowerCase().includes(query)) ||
-      (newsletter.field && newsletter.field.toLowerCase().includes(query))
+      (newsletter.description && newsletter.description.toLowerCase().includes(query))
     );
   }, [newsletters, searchQuery]);
-
-  const handleCreateNewsletter = async (newNewsletter: Newsletter) => {
-    setNewsletters(prev => [newNewsletter, ...prev]);
-  };
-
-  const handleDeleteClick = (id: string) => {
-    setNewsletterToDelete(id);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!newsletterToDelete) return;
-    try {
-      await axios.delete(`/newsletters/${newsletterToDelete}`);
-      setNewsletters(prev => prev.filter(newsletter => newsletter._id !== newsletterToDelete));
-      setNewsletterToDelete(null);
-    } catch (err) {
-      setError("Failed to delete newsletter.");
-      console.error("Error deleting newsletter:", err);
-    } finally {
-      setIsDeleteDialogOpen(false);
-    }
-  };
 
   return (
     <div className="max-w-6xl mx-auto p-6">
@@ -137,7 +102,7 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
         </div>
         
         {/* Create Newsletter Button */}
-        <AddNewsletterDialog onCreate={handleCreateNewsletter} user={user} />
+        <AddNewsletterDialog user={user} />
       </div>)}
 
       {/* Newsletter Stats */}
@@ -153,9 +118,9 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
           </p>
         </div>
         <div className="bg-card rounded-lg p-4 border">
-          <h3>Research Fields</h3>
+          <h3>Total Topics</h3>
           <p className="text-muted-foreground mt-1">
-            {new Set(newsletters.map(n => n.field || n.topic)).size}
+            {new Set(newsletters.map(n => n.topic)).size}
           </p>
         </div>
       </div>
@@ -171,7 +136,7 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
             {searchQuery ? 'No newsletters match your search.' : 'No scientific newsletters created yet.'}
           </p>
           {!searchQuery && (
-            <AddNewsletterDialog onCreate={handleCreateNewsletter} user={user} />
+            <AddNewsletterDialog user={user} />
           )}
         </div>
       ) : (
@@ -180,7 +145,6 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
             <NewsletterCard
               key={newsletter._id}
               newsletter={newsletter}
-              onDelete={handleDeleteClick}
               onView={(newsletter) => onViewNewsletter(newsletter)}
             />
           ))}
@@ -194,24 +158,6 @@ export function Dashboard({ user, onViewNewsletter }: DashboardProps) {
           matching "{searchQuery}"
         </div>
       )}
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this newsletter and all its issues.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

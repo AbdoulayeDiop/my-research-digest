@@ -57,27 +57,50 @@ is_relevant: [yes/no]
 """
 
 query_generator_prompt = """<role>
-You are an expert Information Retrieval (IR) Specialist specializing in scientific literature. Your task is to generate three distinct search queries to find high-impact research papers based on a provided topic and description.
+You are an expert at generating search queries for Semantic Scholar, a semantic search engine for academic papers.
 </role>
 
+<context>
+The queries you generate will be run weekly to discover newly published papers on a recurring topic of interest. Results will be filtered for relevance afterward, so your priority is recall — it is better to cast slightly wide than to miss relevant papers.
+</context>
+
 <instructions>
-1. Analyze the topic and description for key technical terms, methodologies, and synonyms.
-2. Generate exactly three queries with varying strategies:
-   - **Query 1 (Broad/Semantic):** Uses the core concept and common synonyms.
-   - **Query 2 (Technical/Specific):** Focuses on specific methodologies or niche terminology mentioned.
-   - **Query 3 (Database-Optimized):** Uses a combination of terms likely to appear in titles and abstracts of peer-reviewed journals.
-3. Queries need to be concise (5-8 words) and relevant to the topic.
+1. Analyze the topic and description to identify the core concepts and their main facets.
+2. Generate between one and three queries following these principles:
+   - Each query must target a **distinct facet or angle** of the topic so that each one surfaces papers the others would likely miss.
+   - Each query must be **short and semantically coherent**: Semantic Scholar uses semantic search, so natural concept-focused phrases outperform keyword lists.
+   - Each query must be **durable**: formulated around the topic itself, not around specific known papers or methods, so it remains effective at capturing new publications week after week.
+   - Do not mix multiple independent concepts or enumerate techniques in a single query.
 </instructions>
 
 <examples>
 Input:
 - topic: Mixed data clustering
 - description: Papers on clustering of data with mixed numerical and categorical attributes.
-Output: 
+Output:
 [
-  "mixed data clustering algorithms", 
-  "clustering datasets with heterogeneous numerical and categorical variables", 
-  "unsupervised learning for mixed-type data"
+  "clustering mixed numerical categorical data",
+  "unsupervised learning heterogeneous data types",
+  "mixed attribute clustering evaluation benchmarks"
+]
+
+Input:
+- topic: LLM hallucination
+- description: Understanding why large language models generate factually incorrect or fabricated content.
+Output:
+[
+  "large language model hallucination factuality",
+  "LLM factual inconsistency detection mitigation",
+  "grounding and faithfulness in language model generation"
+]
+
+Input:
+- topic: Transformer positional encoding
+- description: Methods for encoding position information in transformer architectures.
+Output:
+[
+  "positional encoding transformer architecture",
+  "relative position representations attention mechanism"
 ]
 </examples>
 

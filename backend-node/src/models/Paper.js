@@ -44,6 +44,6 @@ const PaperSchema = new mongoose.Schema({
     enum: ['like', 'dislike', 'heart', null],
     default: null,
   },
-});
+}, {timestamps: true});
 
 module.exports = mongoose.model('Paper', PaperSchema, 'papers');

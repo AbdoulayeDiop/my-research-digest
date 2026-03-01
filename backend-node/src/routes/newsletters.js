@@ -20,6 +20,12 @@ router.get('/all', adminOrBackendCheck, newsletterController.getAllNewsletters);
 // Get a single newsletter by ID
 router.get('/:id', newsletterController.getNewsletterById);
 
+// Generate queries for a newsletter
+router.post('/generate-queries', newsletterController.generateQueries);
+
+// Test search for a newsletter
+router.post('/:id/test-search', newsletterController.testSearch);
+
 // Update a newsletter
 router.put('/:id', newsletterController.updateNewsletter);
 
