@@ -17,6 +17,11 @@ router.get('/count', userController.countUsers);
 // Sync user
 router.post('/sync', userController.syncUser);
 
+// Saved papers routes
+router.post('/save-paper', userController.savePaper);
+router.get('/saved-papers', userController.getSavedPapers);
+router.delete('/saved-papers/:paperId', userController.unsavePaper);
+
 // Get user by ID
 router.get('/:userId', userController.getUserById);
 

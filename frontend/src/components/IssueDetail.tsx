@@ -1,11 +1,12 @@
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft, Calendar, ExternalLink, ThumbsUp, ThumbsDown, Heart } from "lucide-react";
+import { ArrowLeft, Calendar, ExternalLink, ThumbsUp, ThumbsDown, Heart, Bookmark, BookmarkCheck } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 
 import { useState, useEffect } from "react";
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { useAxios } from "../lib/axios";
+import { toast } from "sonner";
 
 interface Issue {
   _id: string;
@@ -21,6 +22,7 @@ interface Issue {
 
 interface Paper {
   _id: string;
+  paperId?: string;
   title: string;
   authors: string[];
   publicationDate: string;
@@ -51,6 +53,7 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
   const [newsletter, setNewsletter] = useState<Newsletter | null>(location.state?.newsletter);
   
   const [papers, setPapers] = useState<Paper[]>([]);
+  const [savedPaperIds, setSavedPaperIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const axios = useAxios();
@@ -69,6 +72,14 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
         if (currentIssue) {
           const papersResponse = await axios.get(`/papers/byIssue/${currentIssue._id}`);
           setPapers(papersResponse.data);
+
+          // Fetch saved papers to show saved state
+          try {
+            const savedResponse = await axios.get('/users/saved-papers');
+            setSavedPaperIds(new Set(savedResponse.data.map((p: any) => p.paperId)));
+          } catch (err) {
+            console.error("Error fetching saved papers:", err);
+          }
         }
         
         if (!location.state?.newsletter && currentIssue) {
@@ -117,6 +128,40 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
       setPapers(papers.map(p => p._id === paperId ? updatedPaper : p));
     } catch (error) {
       console.error("Error submitting feedback:", error);
+    }
+  };
+
+  const handleToggleSavePaper = async (paper: Paper) => {
+    const paperIdToUse = paper.paperId || paper._id;
+    const isSaved = savedPaperIds.has(paperIdToUse);
+    
+    try {
+      if (isSaved) {
+        await axios.delete(`/users/saved-papers/${paperIdToUse}`);
+        const newSavedIds = new Set(savedPaperIds);
+        newSavedIds.delete(paperIdToUse);
+        setSavedPaperIds(newSavedIds);
+        toast.success("Paper removed from saved papers");
+      } else {
+        await axios.post('/users/save-paper', {
+          paperId: paperIdToUse,
+          title: paper.title,
+          authors: paper.authors,
+          publicationDate: paper.publicationDate,
+          abstract: paper.abstract,
+          url: paper.url,
+          venueName: paper.venueName,
+          synthesis: paper.synthesis,
+          usefulness: paper.usefulness
+        });
+        const newSavedIds = new Set(savedPaperIds);
+        newSavedIds.add(paperIdToUse);
+        setSavedPaperIds(newSavedIds);
+        toast.success("Paper saved to your library");
+      }
+    } catch (error) {
+      console.error("Error toggling saved paper:", error);
+      toast.error("Failed to save paper");
     }
   };
 
@@ -215,11 +260,25 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
                         <span>{new Date(paper.publicationDate).toLocaleDateString()}</span>
                       </div>
                     </div>
-                    <a href={paper.url} target="_blank" rel="noopener noreferrer">
-                      <Button variant="ghost" size="sm" className="shrink-0">
-                        <ExternalLink className="w-4 h-4" />
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        title={savedPaperIds.has(paper.paperId || paper._id) ? "Unsave paper" : "Save paper"}
+                        onClick={() => handleToggleSavePaper(paper)}
+                      >
+                        {savedPaperIds.has(paper.paperId || paper._id) ? (
+                          <BookmarkCheck className="w-4 h-4 text-primary" />
+                        ) : (
+                          <Bookmark className="w-4 h-4" />
+                        )}
                       </Button>
-                    </a>
+                      <a href={paper.url} target="_blank" rel="noopener noreferrer">
+                        <Button variant="ghost" size="sm">
+                          <ExternalLink className="w-4 h-4" />
+                        </Button>
+                      </a>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>

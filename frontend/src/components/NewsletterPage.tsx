@@ -114,7 +114,7 @@ export function NewsletterPage() {
         </TabsList>
 
         <TabsContent value="issues" className="mt-0">
-          <IssuesList
+          <IssuesList 
             onViewIssue={(issue) => navigate(`/issues/${issue._id}`)}
             showHeader={false}
           />

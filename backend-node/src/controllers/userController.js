@@ -3,6 +3,7 @@ const Newsletter = require('../models/Newsletter');
 const Issue = require('../models/Issue');
 const Paper = require('../models/Paper');
 const Reading = require('../models/Reading'); // Import Reading model
+const SavedPaper = require('../models/SavedPaper'); // Import SavedPaper model
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
@@ -179,6 +180,84 @@ exports.getActiveUsers = async (req, res) => {
     }).countDocuments();
 
     res.status(200).json({ activeUsers });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.savePaper = async (req, res) => {
+  try {
+    if (!req.auth || !req.auth.payload || !req.auth.payload.sub) {
+      return res.status(401).json({ message: 'Unauthorized: User not authenticated.' });
+    }
+    const auth0Id = req.auth.payload.sub;
+    const user = await User.findOne({ auth0Id });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const paperData = req.body;
+    const existingSavedPaper = await SavedPaper.findOne({ 
+      userId: user._id, 
+      paperId: paperData.paperId 
+    });
+
+    if (existingSavedPaper) {
+      return res.status(400).json({ message: 'Paper already saved.' });
+    }
+
+    const newSavedPaper = new SavedPaper({
+      userId: user._id,
+      ...paperData
+    });
+
+    await newSavedPaper.save();
+    res.status(201).json(newSavedPaper);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getSavedPapers = async (req, res) => {
+  try {
+    if (!req.auth || !req.auth.payload || !req.auth.payload.sub) {
+      return res.status(401).json({ message: 'Unauthorized: User not authenticated.' });
+    }
+    const auth0Id = req.auth.payload.sub;
+    const user = await User.findOne({ auth0Id });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const savedPapers = await SavedPaper.find({ userId: user._id }).sort({ savedAt: -1 });
+    res.json(savedPapers);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.unsavePaper = async (req, res) => {
+  try {
+    if (!req.auth || !req.auth.payload || !req.auth.payload.sub) {
+      return res.status(401).json({ message: 'Unauthorized: User not authenticated.' });
+    }
+    const auth0Id = req.auth.payload.sub;
+    const user = await User.findOne({ auth0Id });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const { paperId } = req.params;
+    const deletedPaper = await SavedPaper.findOneAndDelete({ 
+      userId: user._id, 
+      paperId 
+    });
+
+    if (!deletedPaper) {
+      return res.status(404).json({ message: 'Saved paper not found.' });
+    }
+
+    res.json({ message: 'Paper removed from saved list.' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

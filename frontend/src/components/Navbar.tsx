@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from 'react-router-dom';
-import { LogOut, User, BookOpen, Trash2, LayoutDashboard } from "lucide-react";
+import { LogOut, User, BookOpen, Trash2, LayoutDashboard, Bookmark } from "lucide-react";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
@@ -81,7 +81,12 @@ export default function Navbar({ onSignIn, onSignOut, user }: NavbarProps) {
 
           {/* User Menu */}
           {user ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <Link to="/saved-papers">
+                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full" title="Saved Papers">
+                  <Bookmark className="h-5 w-5" />
+                </Button>
+              </Link>
               <ThemeToggle />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

@@ -211,7 +211,7 @@ export function NewsletterSettings() {
   }
 
   return (
-    <div className="container mx-auto max-w-4xl py-6">
+    <div className="mx-auto max-w-4xl py-6">
       
       {/* Tips Section */}
               
@@ -227,7 +227,7 @@ export function NewsletterSettings() {
         </Alert>
       )}
 
-      <div className="grid gap-8">
+      <div className="space-y-8">
 
         {/* General Settings */}
         <Card>
@@ -321,7 +321,7 @@ export function NewsletterSettings() {
                   Advanced Settings
                   <Badge variant="secondary" className="font-normal text-[10px] uppercase">Optional</Badge>
                 </h3>
-                <p className="text-sm text-muted-foreground">Fine-tune search queries, filters, and test your configuration.</p>
+                <p className="text-sm text-muted-foreground text-wrap">Fine-tune search queries, filters, and test your configuration.</p>
               </div>
               {isAdvancedOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
             </Button>
