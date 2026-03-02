@@ -20,7 +20,7 @@ class VerifyToken:
     async def verify(self, auth: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
         try:
             signing_key = self.jwks_client.get_signing_key_from_jwt(auth.credentials)
-            
+            print("auth.credentials", auth.credentials)
             payload = jwt.decode(
                 auth.credentials,
                 signing_key.key,

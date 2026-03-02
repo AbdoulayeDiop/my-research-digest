@@ -1,5 +1,5 @@
 # Use an official Node.js runtime as a parent image
-FROM node:20-alpine as build
+FROM node:25-alpine as build
 
 ARG VITE_AUTH0_DOMAIN
 ARG VITE_AUTH0_CLIENT_ID
@@ -7,6 +7,7 @@ ARG VITE_AUTH0_REDIRECT_URI
 ARG VITE_AUTH0_AUDIENCE
 ARG VITE_MONGO_API_URL
 ARG VITE_ADMIN_EMAILS
+ARG VITE_PYTHON_API_URL
 
 # Set the working directory in the container
 WORKDIR /app

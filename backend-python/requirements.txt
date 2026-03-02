@@ -5,4 +5,4 @@ pydantic
 openai
 fastapi
 uvicorn
-pyjwt
+PyJWT[crypto]
