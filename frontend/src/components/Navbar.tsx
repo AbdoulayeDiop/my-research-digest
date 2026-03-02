@@ -83,9 +83,14 @@ export default function Navbar({ onSignIn, onSignOut, user }: NavbarProps) {
           {user ? (
             <div className="flex items-center gap-1">
               <Link to="/saved-papers">
-                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full" title="Saved Papers">
-                  <Bookmark className="h-5 w-5" />
-                </Button>
+                <div className="relative">
+                  <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full" title="Saved Papers">
+                    <Bookmark className="h-5 w-5" />
+                  </Button>
+                  <span className="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-red-600 rounded-full">
+                    New
+                  </span>
+                </div>
               </Link>
               <ThemeToggle />
               <DropdownMenu>
