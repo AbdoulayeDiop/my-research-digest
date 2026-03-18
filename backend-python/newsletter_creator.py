@@ -31,8 +31,9 @@ def get_paper_score(paper: Dict) -> float:
 
 
 class NewsletterCreator:
-    def __init__(self, model: str = "gpt-5-mini", temperature: float = 0, api_client=None):
+    def __init__(self, model: str = "gpt-5-mini", embedding_model="text-embedding-3-large", temperature: float = 0, api_client=None):
         self.model = model
+        self.embedding_model = embedding_model
         self.temperature = temperature
         self.client = OpenAI()
         self.api_client = api_client
@@ -58,7 +59,10 @@ class NewsletterCreator:
             results.extend(semantic_searcher.search(
                 query, start_date, max_papers, end_date=end_date, filters=filters))
             time.sleep(1) # Add a 1-second delay to respect API rate limits
-        return results
+        # Filter unique papers
+        unique_papers = {p["paperId"]: p for p in results}
+        unique_papers = list(unique_papers.values())
+        return unique_papers
 
     async def create_newsletter(self, topic: str, start_date: str, description: str="", nb_papers: int = 5, end_date: str = None, max_papers: int = 10, queries=None, ranking_strategy='author_based', filters=None, newsletter_id=None) -> NewsletterWriterOutput:
         print(f"Searching for papers (strategy: {ranking_strategy}, filters: {filters})...")
@@ -70,12 +74,27 @@ class NewsletterCreator:
                 print(f"{len(papers)} papers are relevant. Analyzing papers...")
                 
                 if ranking_strategy == 'author_based':
-                    papers = sorted(papers, key=get_paper_score, reverse=True)[:nb_papers]
+                    for p in papers:
+                        p["score"] = get_paper_score(p)
+                    papers = sorted(papers, key=lambda p: p["score"], reverse=True)[:nb_papers]
                 else:
                     # embedding_based: Semantic Scholar already returns results sorted by relevance
                     # We could implement a custom embedding sort here, but for now we'll take the top ones from Semantic Scholar
                     # after filtering.
-                    papers = papers[:nb_papers]
+                    response = self.client.embeddings.create(
+                        model=self.embedding_model,
+                        input=[f"{topic}\n{description}"] + [p["abstract"] for p in papers]
+                    )
+                    embbedings = [obj.embedding for obj in response.data]
+
+                    v0 = embbedings[0]
+                    norm0 = np.linalg.norm(v0)
+
+                    for i, p in enumerate(papers):
+                        emb = embbedings[i + 1]
+                        p["score"] = np.dot(v0, emb)/(norm0 * np.linalg.norm(emb))
+
+                    papers = sorted(papers, key=lambda p: p["score"], reverse=True)[:nb_papers]
                     
                 analyzes = await self.analyze_papers(topic, papers, description=description)
                 papers_with_analysis = [{"paper": paper, "analysis": analysis.model_dump(
@@ -86,6 +105,9 @@ class NewsletterCreator:
 
     async def filter_papers(self, topic: str, papers: List[Dict], description: str="") -> List[Dict]:
         async def do_filter(paper):
+            if not paper['title'] or not paper['abstract']:
+                return 'no'
+
             response = await asyncio.to_thread(
                 self.client.responses.parse,
                 model=self.model,
@@ -153,7 +175,7 @@ class NewsletterCreator:
             papers_section += f"### {paper.get('title', 'No Title')}\n\n"
             papers_section += f"**Synthesis**: {analysis.get('synthesis', 'N/A')}\n\n"
             papers_section += f"**Usefulness**: {analysis.get('usefulness', 'N/A')}\n\n"
-            papers_section += f"**Pertinence Score**: {analysis.get('pertinence', 'N/A')}/5\n\n"
+            papers_section += f"**Score**: {paper.get('score', 'N/A')}\n\n"
             if paper.get('url'):
                 papers_section += f"[Read the full paper]({paper.get('url')})\n\n"
             papers_section += "---\n\n"
@@ -190,7 +212,10 @@ if __name__ == "__main__":
 
     async def main():
         creator = NewsletterCreator()
-        result = await creator.create_newsletter("new llm architectures", "2026-01-06", description="New Large Language Models with novel architecture or new innovations", end_date="2026-01-14", max_papers=10)
+        result = await creator.create_newsletter(
+            "new llm architectures", "2026-01-06", 
+            description="New Large Language Models with novel architecture or new innovations",
+            end_date="2026-01-14", max_papers=10, ranking_strategy="embedding_based")
         if result and "newsletter" in result:
             print(result["newsletter"]["content_markdown"])
 

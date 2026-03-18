@@ -56,7 +56,7 @@ def create_issue_and_papers(api_client, newsletter, newsletter_data, papers):
             'url': paper_data.get('url'),
             'synthesis': analysis_data.get('synthesis'),
             'usefulness': analysis_data.get('usefulness'),
-            'score': analysis_data.get('score'),
+            'score': paper_data.get('score'),
             'issueId': issue_id,  # Add the issueId here
             'venueName': (paper_data.get('publicationVenue') or {}).get('name', None)
         })
