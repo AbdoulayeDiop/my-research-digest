@@ -4,6 +4,44 @@ const Reading = require('../models/Reading'); // Import Reading model
 const User = require('../models/User'); // Import User model to find user by ID
 
 
+exports.submitFeedbackFromEmail = async (req, res) => {
+  try {
+    const { issueId } = req.params;
+    const { userId, rating, signature } = req.query;
+    const secret = process.env.URL_SIGNATURE_SECRET;
+    const appDomain = process.env.APP_DOMAIN || 'http://localhost';
+
+    if (!userId || !rating || !signature || !secret) {
+      return res.redirect(`${appDomain}/status/error`);
+    }
+
+    if (!['useful', 'not_useful'].includes(rating)) {
+      return res.redirect(`${appDomain}/status/error`);
+    }
+
+    const dataToSign = `${issueId}${userId}${rating}`;
+    const expectedSignature = crypto.createHmac('sha256', secret).update(dataToSign).digest('hex');
+
+    if (signature.length !== expectedSignature.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+      return res.redirect(`${appDomain}/status/forbidden`);
+    }
+
+    const issue = await Issue.findById(issueId);
+    if (!issue) return res.redirect(`${appDomain}/status/error`);
+
+    const user = await User.findById(userId);
+    if (!user) return res.redirect(`${appDomain}/status/error`);
+
+    await Issue.findByIdAndUpdate(issueId, { rating });
+    return res.redirect(`${appDomain}/status/feedback-success`);
+
+  } catch (error) {
+    console.error('Error submitting feedback from email:', error);
+    const appDomain = process.env.APP_DOMAIN || 'http://localhost';
+    res.redirect(`${appDomain}/status/error`);
+  }
+};
+
 exports.markAsReadFromEmail = async (req, res) => {
   try {
     const { issueId } = req.params;

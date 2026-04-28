@@ -65,6 +65,72 @@ def create_issue_and_papers(api_client, newsletter, newsletter_data, papers):
     return created_issue
 
 
+async def check_newsletter_inactivity(api_client, newsletter):
+    """Warn or disable a newsletter based on consecutive unread issues."""
+    newsletter_id = newsletter['_id']
+    user_id = newsletter.get('userId')
+    topic = newsletter.get('topic', 'N/A')
+
+    if not user_id:
+        return
+
+    unread_count = api_client.get_consecutive_unread_count(newsletter_id, user_id)
+    if unread_count is None:
+        return
+
+    warning_sent = newsletter.get('inactivityWarningSentAt')
+
+    # Re-engagement: user read something after a warning was sent
+    if unread_count < 3 and warning_sent:
+        api_client.update_newsletter(newsletter_id, {'inactivityWarningSentAt': None})
+        return
+
+    user_info = api_client.get_user_info(user_id)
+    user_email = user_info.get('email') if user_info else None
+    user_name = user_info.get('name', 'user') if user_info else 'user'
+
+    if unread_count >= 4:
+        logging.info(f"Disabling newsletter '{topic}' due to 4 consecutive unread issues.")
+        api_client.update_newsletter(newsletter_id, {'status': 'inactive', 'inactivityWarningSentAt': None})
+        if user_email:
+            subject = f"Your newsletter on \"{topic}\" has been paused"
+            body = f"""
+                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+                    <p>Dear {user_name},</p>
+                    <p>Your newsletter on <strong>{topic}</strong> has been automatically paused.</p>
+                    <p>Since the last 4 issues went unread, we've stopped generating new ones to avoid producing content you don't need right now.</p>
+                    <p>Whenever you're ready to pick it back up, just reactivate it from your dashboard — all your past issues are still there.</p>
+                    <p style="text-align: center; margin: 30px 0;">
+                        <a href="{os.getenv('APP_DOMAIN')}" style="background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                            Reactivate Newsletter
+                        </a>
+                    </p>
+                    <p>Best regards,<br>The My Research Digest Team</p>
+                </div>
+            """
+            send_email(subject, body, user_email, is_html=True)
+
+    elif unread_count == 3 and not warning_sent:
+        logging.info(f"Sending inactivity warning for newsletter '{topic}'.")
+        api_client.update_newsletter(newsletter_id, {'inactivityWarningSentAt': datetime.now().isoformat()})
+        if user_email:
+            subject = f"Your newsletter on \"{topic}\" will be paused next week"
+            body = f"""
+                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+                    <p>Dear {user_name},</p>
+                    <p>The last 3 issues of your newsletter on <strong>{topic}</strong> have gone unread, so we'll automatically pause it after the next issue to avoid generating content you don't need.</p>
+                    <p>If you'd like to keep receiving it, simply read one of your recent issues. If you no longer need it, you can delete it from your settings — no action needed to pause it.</p>
+                    <p style="text-align: center; margin: 30px 0;">
+                        <a href="{os.getenv('APP_DOMAIN')}" style="background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                            Go to Dashboard
+                        </a>
+                    </p>
+                    <p>Best regards,<br>The My Research Digest Team</p>
+                </div>
+            """
+            send_email(subject, body, user_email, is_html=True)
+
+
 async def process_newsletter(api_client, newsletter):
     logging.info(f"Processing newsletter: {newsletter.get('topic', 'N/A')}")
 
@@ -180,6 +246,7 @@ async def process_newsletter(api_client, newsletter):
         if not URL_SIGNATURE_SECRET:
             logging.error("URL_SIGNATURE_SECRET environment variable not set. Cannot generate signed URLs.")
             mark_as_read_section = ""
+            feedback_section = ""
         else:
             data_to_sign = f"{issue_id_str}{user_id_str}"
             signature = hmac.new(
@@ -195,6 +262,30 @@ async def process_newsletter(api_client, newsletter):
                         Mark as Read
                     </a>
                 </p>
+            """
+
+            sig_useful = hmac.new(
+                URL_SIGNATURE_SECRET.encode('utf-8'),
+                f"{issue_id_str}{user_id_str}useful".encode('utf-8'),
+                hashlib.sha256
+            ).hexdigest()
+            sig_not_useful = hmac.new(
+                URL_SIGNATURE_SECRET.encode('utf-8'),
+                f"{issue_id_str}{user_id_str}not_useful".encode('utf-8'),
+                hashlib.sha256
+            ).hexdigest()
+
+            base = f"{os.getenv('APP_DOMAIN')}/api/public/issues/{issue_id_str}/feedback?userId={user_id_str}"
+            feedback_section = f"""
+                <div style="text-align: center; margin-top: 24px; border-top: 1px solid #eee; padding-top: 20px;">
+                    <p style="margin-bottom: 12px; color: #555; font-size: 0.95em;">Was this issue useful?</p>
+                    <a href="{base}&rating=useful&signature={sig_useful}" style="background-color: #4f46e5; color: white; padding: 10px 22px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-right: 10px;">
+                        Yes, it was
+                    </a>
+                    <a href="{base}&rating=not_useful&signature={sig_not_useful}" style="background-color: #e5e7eb; color: #374151; padding: 10px 22px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                        Not really
+                    </a>
+                </div>
             """
 
         # Construct the full issue body in HTML
@@ -241,6 +332,7 @@ async def process_newsletter(api_client, newsletter):
             <hr>
             <p>You can also view the full issue on your dashboard: <a href="{issue_link}">{issue_link}</a></p>
             {mark_as_read_section}
+            {feedback_section}
             <p>Best regards,</p>
             <p>The My Research Digest Team</p>
         """
@@ -263,6 +355,8 @@ async def main():
             continue
 
         for newsletter in newsletters:
+            if newsletter.get('status') == 'active':
+                await check_newsletter_inactivity(api_client, newsletter)
             await process_newsletter(api_client, newsletter)
 
         logging.info("Daily newsletter generation cycle finished.")

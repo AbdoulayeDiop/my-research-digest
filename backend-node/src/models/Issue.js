@@ -33,6 +33,11 @@ const IssueSchema = new mongoose.Schema({
     enum: ['published', 'draft'],
     default: 'draft',
   },
+  rating: {
+    type: String,
+    enum: ['useful', 'not_useful', null],
+    default: null,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

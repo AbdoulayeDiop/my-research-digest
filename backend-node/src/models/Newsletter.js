@@ -36,6 +36,9 @@ const NewsletterSchema = new mongoose.Schema({
     type: [String],
     default: []
   },
+  inactivityWarningSentAt: {
+    type: Date,
+  },
   filters: {
     venues: {
       type: [String],

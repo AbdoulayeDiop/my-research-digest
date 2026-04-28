@@ -138,6 +138,23 @@ class ApiClient:
             logging.error(f"Error creating issue for newsletter {newsletter_id}: {e}")
             return None
 
+    def get_consecutive_unread_count(self, newsletter_id, user_id):
+        """Returns count of consecutive unread issues from most recent for a given user."""
+        token = self._get_access_token()
+        if not token:
+            return None
+        headers = {'Authorization': f'Bearer {token}'}
+        try:
+            response = self.session.get(
+                f"{self.base_url}/issues/byNewsletterId/{newsletter_id}/consecutive-unread/{user_id}",
+                headers=headers
+            )
+            response.raise_for_status()
+            return response.json().get('count', 0)
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Error getting consecutive unread count for newsletter {newsletter_id}: {e}")
+            return None
+
     def update_newsletter(self, newsletter_id, newsletter_data):
         """Updates a newsletter's information."""
         token = self._get_access_token()

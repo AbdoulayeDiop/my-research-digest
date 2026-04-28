@@ -157,6 +157,7 @@ exports.getAllNewsletters = async (req, res) => {
         $addFields: {
           creatorName: { $arrayElemAt: ['$userDetails.name', 0] },
           issueCount: { $size: '$issues' },
+          lastIssueDate: { $max: '$issues.createdAt' },
         },
       },
       {
@@ -188,10 +189,10 @@ exports.getNewsletterById = async (req, res) => {
 // Update a newsletter
 exports.updateNewsletter = async (req, res) => {
   try {
-    const { description, status, rankingStrategy, queries, lastSearch, filters } = req.body;
+    const { description, status, rankingStrategy, queries, lastSearch, filters, inactivityWarningSentAt } = req.body;
     const updatedNewsletter = await Newsletter.findByIdAndUpdate(
       req.params.id,
-      { description, status, rankingStrategy, queries, lastSearch, filters },
+      { description, status, rankingStrategy, queries, lastSearch, filters, inactivityWarningSentAt },
       { new: true } // Return the updated document
     );
     if (!updatedNewsletter) {
@@ -238,6 +239,63 @@ exports.deleteNewsletter = async (req, res) => {
     const deletedNewsletter = await Newsletter.findByIdAndDelete(newsletterId);
 
     res.json({ message: 'Newsletter and all associated data deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getOverdueNewsletters = async (req, res) => {
+  try {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const newsletters = await Newsletter.aggregate([
+      {
+        $match: {
+          status: 'active',
+          $and: [
+            { lastSearch: { $exists: true } },
+            { lastSearch: { $lt: sevenDaysAgo } },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'userDetails',
+        },
+      },
+      {
+        $addFields: {
+          creatorName: { $arrayElemAt: ['$userDetails.name', 0] },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          topic: 1,
+          lastSearch: 1,
+          creatorName: 1,
+        },
+      },
+    ]);
+    res.json(newsletters);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.resetNewsletterLastSearch = async (req, res) => {
+  try {
+    const newsletter = await Newsletter.findByIdAndUpdate(
+      req.params.id,
+      { $unset: { lastSearch: '' } },
+      { new: true }
+    );
+    if (!newsletter) {
+      return res.status(404).json({ message: 'Newsletter not found' });
+    }
+    res.json({ message: 'Newsletter queued for next worker run' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

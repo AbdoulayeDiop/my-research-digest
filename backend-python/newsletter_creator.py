@@ -1,8 +1,8 @@
 import prompts
 from data_models import RelevanceOutput, QueryGeneratorOutput, PaperAnalyzerOutput, NewsletterWriterOutput
-from paper_search import SemanticSearch
+from paper_search import SemanticSearch, OpenAlexSearch
 import asyncio
-from typing import List, Dict
+from typing import List, Dict, Optional
 from pydantic import BaseModel
 import numpy as np
 import re
@@ -23,11 +23,22 @@ def generate_queries(topic: str, description: str, model: str="gpt-5-mini") -> L
     return parsed_response.queries
 
 def get_paper_score(paper: Dict) -> float:
-    if paper.get("authors") is None or len(paper.get("authors")) == 0:
-        return 0
-    return np.mean([(author.get("citationCount") or 0) for author in paper.get("authors")]) * \
-        np.mean([(author.get("hIndex") or 0)
-                for author in paper.get("authors")])
+    """
+    Computes a score for a paper based on the maximum h-index among its authors 
+    and its own citation count.
+    """
+    citation_score = paper.get("citationCount", 0) or 0
+    
+    # Author influence: consider h-index only as requested
+    max_h_index = 0
+    if paper.get("authors"):
+        h_indexes = [author.get("hIndex", 0) or 0 for author in paper.get("authors")]
+        if h_indexes:
+            max_h_index = max(h_indexes)
+    
+    # Combined score: log(citations) + h_index
+    # We use max h-index as it represents the "most senior/influential" author on the paper
+    return float(np.log1p(citation_score) + max_h_index)
 
 
 class NewsletterCreator:
@@ -38,7 +49,7 @@ class NewsletterCreator:
         self.client = OpenAI()
         self.api_client = api_client
 
-    def search(self, topic, description, start_date, end_date=None, max_papers: int = 10, queries=None, filters=None, newsletter_id=None):
+    def search(self, topic, description, start_date, end_date=None, max_papers: int = 10, queries=None, filters=None, newsletter_id=None, search_engine="semantic_scholar"):
         if not queries or len(queries) == 0:
             print("No stored queries found. Generating search queries...")
             queries = generate_queries(topic, description, model=self.model)
@@ -53,20 +64,35 @@ class NewsletterCreator:
         else:
             print("Using stored search queries:", queries)
             
-        semantic_searcher = SemanticSearch()
-        results = []
-        for query in queries:
-            results.extend(semantic_searcher.search(
-                query, start_date, max_papers, end_date=end_date, filters=filters))
-            time.sleep(1) # Add a 1-second delay to respect API rate limits
-        # Filter unique papers
-        unique_papers = {p["paperId"]: p for p in results}
-        unique_papers = list(unique_papers.values())
-        return unique_papers
+        searchers = []
+        if search_engine == "openalex":
+            searchers.append(OpenAlexSearch())
+        elif search_engine == "all":
+            searchers.append(SemanticSearch())
+            searchers.append(OpenAlexSearch())
+        else: # Default is "semantic_scholar"
+            searchers.append(SemanticSearch())
 
-    async def create_newsletter(self, topic: str, start_date: str, description: str="", nb_papers: int = 5, end_date: str = None, max_papers: int = 10, queries=None, ranking_strategy='author_based', filters=None, newsletter_id=None) -> NewsletterWriterOutput:
-        print(f"Searching for papers (strategy: {ranking_strategy}, filters: {filters})...")
-        papers = self.search(topic, description=description, start_date=start_date, end_date=end_date, max_papers=max_papers, queries=queries, filters=filters, newsletter_id=newsletter_id)
+        results = []
+        for searcher in searchers:
+            for query in queries:
+                results.extend(searcher.search(
+                    query, start_date, max_papers, end_date=end_date, filters=filters))
+                time.sleep(1) # Add a 1-second delay to respect API rate limits
+        
+        # Filter unique papers (by title normalization if IDs differ, but paperId is usually a good start)
+        # We use a dict to deduplicate by title (normalized) to catch papers found across different engines
+        unique_papers = {}
+        for p in results:
+            title_norm = re.sub(r'\W+', '', p["title"].lower())
+            if title_norm not in unique_papers:
+                unique_papers[title_norm] = p
+        
+        return list(unique_papers.values())
+
+    async def create_newsletter(self, topic: str, start_date: str, description: str="", nb_papers: int = 5, end_date: str = None, max_papers: int = 10, queries=None, ranking_strategy='author_based', filters=None, newsletter_id=None, search_engine="semantic_scholar") -> NewsletterWriterOutput:
+        print(f"Searching for papers (engine: {search_engine}, strategy: {ranking_strategy}, filters: {filters})...")
+        papers = self.search(topic, description=description, start_date=start_date, end_date=end_date, max_papers=max_papers, queries=queries, filters=filters, newsletter_id=newsletter_id, search_engine=search_engine)
         if papers:
             print(f"Found {len(papers)} papers. Filtering for relevance...")
             papers = await self.filter_papers(topic, papers, description=description)
@@ -78,9 +104,6 @@ class NewsletterCreator:
                         p["score"] = get_paper_score(p)
                     papers = sorted(papers, key=lambda p: p["score"], reverse=True)[:nb_papers]
                 else:
-                    # embedding_based: Semantic Scholar already returns results sorted by relevance
-                    # We could implement a custom embedding sort here, but for now we'll take the top ones from Semantic Scholar
-                    # after filtering.
                     response = self.client.embeddings.create(
                         model=self.embedding_model,
                         input=[f"{topic}\n{description}"] + [p["abstract"] for p in papers]
@@ -215,7 +238,8 @@ if __name__ == "__main__":
         result = await creator.create_newsletter(
             "new llm architectures", "2026-01-06", 
             description="New Large Language Models with novel architecture or new innovations",
-            end_date="2026-01-14", max_papers=10, ranking_strategy="embedding_based")
+            end_date="2026-01-14", max_papers=10, ranking_strategy="embedding_based",
+            search_engine="openalex")
         if result and "newsletter" in result:
             print(result["newsletter"]["content_markdown"])
 

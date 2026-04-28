@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAxios } from "../lib/axios";
-import { Search } from "lucide-react"; // Added Search icon import
+import { Search, AlertTriangle, CheckCircle } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -9,8 +9,9 @@ import {
   TableHeader,
   TableRow,
 } from "./ui/table";
-import { Button } from "./ui/button"; // Added Button import
+import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { Badge } from "./ui/badge";
 
 interface AdminDashboardProps {
   onBack: () => void;
@@ -26,43 +27,45 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
   });
   const [usersData, setUsersData] = useState<any[]>([]);
   const [usersCurrentPage, setUsersCurrentPage] = useState(1);
-  const [usersPerPage] = useState(10); // Number of users per page
-  const [usersSearchQuery, setUsersSearchQuery] = useState(""); // Search query for users
+  const [usersPerPage] = useState(10);
+  const [usersSearchQuery, setUsersSearchQuery] = useState("");
   const [allNewsletters, setAllNewsletters] = useState<any[]>([]);
   const [newslettersCurrentPage, setNewslettersCurrentPage] = useState(1);
-  const [newslettersPerPage] = useState(10); // Number of newsletters per page
-  const [newslettersSearchQuery, setNewslettersSearchQuery] = useState(""); // Search query for newsletters
+  const [newslettersPerPage] = useState(10);
+  const [newslettersSearchQuery, setNewslettersSearchQuery] = useState("");
+  const [overdueNewsletters, setOverdueNewsletters] = useState<any[]>([]);
+  const [queuingIds, setQueuingIds] = useState<Set<string>>(new Set());
 
-  // Derived state for users pagination and filtering
-  const filteredUsers = usersData.filter(user =>
-    user.name?.toLowerCase().includes(usersSearchQuery.toLowerCase()) ||
-    user.email?.toLowerCase().includes(usersSearchQuery.toLowerCase())
+  const filteredUsers = usersData.filter(
+    (user) =>
+      user.name?.toLowerCase().includes(usersSearchQuery.toLowerCase()) ||
+      user.email?.toLowerCase().includes(usersSearchQuery.toLowerCase())
   );
   const indexOfLastUser = usersCurrentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
   const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
   const usersTotalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
-  // Derived state for newsletters pagination and filtering
-  const filteredNewsletters = allNewsletters.filter(newsletter =>
-    newsletter.topic?.toLowerCase().includes(newslettersSearchQuery.toLowerCase()) ||
-    newsletter.description?.toLowerCase().includes(newslettersSearchQuery.toLowerCase()) ||
-    newsletter.field?.toLowerCase().includes(newslettersSearchQuery.toLowerCase())
+  const filteredNewsletters = allNewsletters.filter(
+    (newsletter) =>
+      newsletter.topic?.toLowerCase().includes(newslettersSearchQuery.toLowerCase()) ||
+      newsletter.description?.toLowerCase().includes(newslettersSearchQuery.toLowerCase()) ||
+      newsletter.field?.toLowerCase().includes(newslettersSearchQuery.toLowerCase())
   );
   const indexOfLastNewsletter = newslettersCurrentPage * newslettersPerPage;
   const indexOfFirstNewsletter = indexOfLastNewsletter - newslettersPerPage;
   const currentNewsletters = filteredNewsletters.slice(indexOfFirstNewsletter, indexOfLastNewsletter);
   const newslettersTotalPages = Math.ceil(filteredNewsletters.length / newslettersPerPage);
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const axios = useAxios();
 
   const formatRelativeTime = (dateString: string) => {
-    if (!dateString) return 'Never';
+    if (!dateString) return "Never";
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
     if (diffInSeconds < 60) return `${diffInSeconds}s ago`;
     const diffInMinutes = Math.floor(diffInSeconds / 60);
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
@@ -72,18 +75,31 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
     return `${diffInDays}d ago`;
   };
 
+  const fetchOverdue = useCallback(async () => {
+    const res = await axios.get(`/newsletters/overdue`);
+    setOverdueNewsletters(res.data);
+  }, [axios]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        // Fetch total counts
-        const [usersCountResponse, newslettersCountResponse, issuesCountResponse, papersCountResponse, activeUsersResponse, allNewslettersResponse] = await Promise.all([
+        const [
+          usersCountResponse,
+          newslettersCountResponse,
+          issuesCountResponse,
+          papersCountResponse,
+          activeUsersResponse,
+          allNewslettersResponse,
+          overdueResponse,
+        ] = await Promise.all([
           axios.get(`/users/count`),
           axios.get(`/newsletters/count`),
           axios.get(`/issues/count`),
           axios.get(`/papers/count`),
           axios.get(`/users/active-count`),
-          axios.get(`/newsletters/all`), // Fetch all newsletters using the admin route
+          axios.get(`/newsletters/all`),
+          axios.get(`/newsletters/overdue`),
         ]);
 
         setStats({
@@ -94,12 +110,10 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
           activeUsers: activeUsersResponse.data.activeUsers,
         });
 
-        // Fetch users with newsletter counts
         const usersDataResponse = await axios.get(`/users/with-newsletter-count`);
         setUsersData(usersDataResponse.data);
-
-        setAllNewsletters(allNewslettersResponse.data); // Set all newsletters
-
+        setAllNewsletters(allNewslettersResponse.data);
+        setOverdueNewsletters(overdueResponse.data);
         setError(null);
       } catch (err) {
         setError("Failed to fetch admin data.");
@@ -112,6 +126,28 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
     fetchData();
   }, [axios]);
 
+  const handleQueue = async (newsletterId: string) => {
+    setQueuingIds((prev) => new Set(prev).add(newsletterId));
+    try {
+      await axios.post(`/newsletters/${newsletterId}/reset-last-search`);
+      await fetchOverdue();
+      // Optimistically remove from the overdue list
+      setOverdueNewsletters((prev) => prev.filter((n) => n._id !== newsletterId));
+      // Update lastSearch in the main table
+      setAllNewsletters((prev) =>
+        prev.map((n) => (n._id === newsletterId ? { ...n, lastSearch: null } : n))
+      );
+    } catch (err) {
+      console.error("Failed to queue newsletter:", err);
+    } finally {
+      setQueuingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(newsletterId);
+        return next;
+      });
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-6">
       <h1 className="mb-6">Admin Dashboard</h1>
@@ -121,28 +157,80 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
       ) : error ? (
         <div className="text-center py-12 text-destructive">Error: {error}</div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-card rounded-lg p-4 border">
-            <h3 className="text-lg font-semibold">Total Users</h3>
-            <p className="text-3xl font-bold text-primary mt-2">{stats.totalUsers}</p>
+        <>
+          {/* Stats cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-card rounded-lg p-4 border">
+              <h3 className="text-lg font-semibold">Total Users</h3>
+              <p className="text-3xl font-bold text-primary mt-2">{stats.totalUsers}</p>
+            </div>
+            <div className="bg-card rounded-lg p-4 border">
+              <h3 className="text-lg font-semibold">Total Newsletters</h3>
+              <p className="text-3xl font-bold text-primary mt-2">{stats.totalNewsletters}</p>
+            </div>
+            <div className="bg-card rounded-lg p-4 border">
+              <h3 className="text-lg font-semibold">Total Issues</h3>
+              <p className="text-3xl font-bold text-primary mt-2">{stats.totalIssues}</p>
+            </div>
+            <div className="bg-card rounded-lg p-4 border">
+              <h3 className="text-lg font-semibold">Total Papers</h3>
+              <p className="text-3xl font-bold text-primary mt-2">{stats.totalPapers}</p>
+            </div>
+            <div className="bg-card rounded-lg p-4 border">
+              <h3 className="text-lg font-semibold">Active Users (7d)</h3>
+              <p className="text-3xl font-bold text-primary mt-2">{stats.activeUsers}</p>
+            </div>
           </div>
-          <div className="bg-card rounded-lg p-4 border">
-            <h3 className="text-lg font-semibold">Total Newsletters</h3>
-            <p className="text-3xl font-bold text-primary mt-2">{stats.totalNewsletters}</p>
+
+          {/* Pipeline status */}
+          <div className="mt-10">
+            <h2 className="text-2xl font-bold mb-4">Pipeline Status</h2>
+            {overdueNewsletters.length === 0 ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground bg-card border rounded-lg p-4">
+                <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                All active newsletters are up to date.
+              </div>
+            ) : (
+              <div className="rounded-md border">
+                <div className="flex items-center gap-2 px-4 py-3 border-b bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 text-sm">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  {overdueNewsletters.length} newsletter{overdueNewsletters.length > 1 ? "s" : ""} overdue for generation (last run &gt;7 days ago or never run)
+                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Topic</TableHead>
+                      <TableHead>Creator</TableHead>
+                      <TableHead>Last Run</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {overdueNewsletters.map((newsletter) => (
+                      <TableRow key={newsletter._id}>
+                        <TableCell className="font-medium">{newsletter.topic}</TableCell>
+                        <TableCell>{newsletter.creatorName || "N/A"}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {formatRelativeTime(newsletter.lastSearch)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={queuingIds.has(newsletter._id)}
+                            onClick={() => handleQueue(newsletter._id)}
+                          >
+                            {queuingIds.has(newsletter._id) ? "Queuing..." : "Queue for next run"}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </div>
-          <div className="bg-card rounded-lg p-4 border">
-            <h3 className="text-lg font-semibold">Total Issues</h3>
-            <p className="text-3xl font-bold text-primary mt-2">{stats.totalIssues}</p>
-          </div>
-          <div className="bg-card rounded-lg p-4 border">
-            <h3 className="text-lg font-semibold">Total Papers</h3>
-            <p className="text-3xl font-bold text-primary mt-2">{stats.totalPapers}</p>
-          </div>
-          <div className="bg-card rounded-lg p-4 border">
-            <h3 className="text-lg font-semibold">Active Users (last 7 days)</h3>
-            <p className="text-3xl font-bold text-primary mt-2">{stats.activeUsers}</p>
-          </div>
-        </div>
+        </>
       )}
 
       <div className="mt-8">
@@ -151,6 +239,7 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
         </button>
       </div>
 
+      {/* Users table */}
       <h2 className="text-2xl font-bold mt-10 mb-4">Users Overview</h2>
       <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -159,7 +248,7 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
           value={usersSearchQuery}
           onChange={(e) => {
             setUsersSearchQuery(e.target.value);
-            setUsersCurrentPage(1); // Reset to first page on search
+            setUsersCurrentPage(1);
           }}
           className="pl-9"
         />
@@ -181,7 +270,7 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
               <TableBody>
                 {currentUsers.map((user) => (
                   <TableRow key={user._id}>
-                    <TableCell className="font-medium">{user.name || 'N/A'}</TableCell>
+                    <TableCell className="font-medium">{user.name || "N/A"}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{user.newsletterCount}</TableCell>
                     <TableCell>{formatRelativeTime(user.lastLoginAt)}</TableCell>
@@ -206,6 +295,8 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
           </div>
         </>
       )}
+
+      {/* Newsletters table */}
       <h2 className="text-2xl font-bold mt-10 mb-4">Newsletters Overview</h2>
       <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -214,7 +305,7 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
           value={newslettersSearchQuery}
           onChange={(e) => {
             setNewslettersSearchQuery(e.target.value);
-            setNewslettersCurrentPage(1); // Reset to first page on search
+            setNewslettersCurrentPage(1);
           }}
           className="pl-9"
         />
@@ -230,18 +321,28 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
                   <TableHead>Topic</TableHead>
                   <TableHead>Creator</TableHead>
                   <TableHead>Issues</TableHead>
-                  <TableHead>Field</TableHead>
-                  <TableHead>Created At</TableHead>
+                  <TableHead>Ranking</TableHead>
+                  <TableHead>Last Run</TableHead>
+                  <TableHead>Last Issue</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {currentNewsletters.map((newsletter) => (
                   <TableRow key={newsletter._id}>
                     <TableCell className="font-medium">{newsletter.topic}</TableCell>
-                    <TableCell>{newsletter.creatorName || 'N/A'}</TableCell>
+                    <TableCell>{newsletter.creatorName || "N/A"}</TableCell>
                     <TableCell>{newsletter.issueCount}</TableCell>
-                    <TableCell>{newsletter.field || 'N/A'}</TableCell>
-                    <TableCell>{new Date(newsletter.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">
+                        {newsletter.rankingStrategy === "embedding_based" ? "Embedding" : "Author"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {formatRelativeTime(newsletter.lastSearch)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {formatRelativeTime(newsletter.lastIssueDate)}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -255,7 +356,9 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
               Previous
             </Button>
             <Button
-              onClick={() => setNewslettersCurrentPage((prev) => Math.min(prev + 1, newslettersTotalPages))}
+              onClick={() =>
+                setNewslettersCurrentPage((prev) => Math.min(prev + 1, newslettersTotalPages))
+              }
               disabled={newslettersCurrentPage === newslettersTotalPages}
             >
               Next
@@ -263,7 +366,6 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
           </div>
         </>
       )}
-
     </div>
   );
 }

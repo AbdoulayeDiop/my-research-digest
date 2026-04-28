@@ -16,6 +16,14 @@ export function StatusPage() {
           buttonText: "Go to Dashboard",
           buttonLink: "/"
         };
+      case 'feedback-success':
+        return {
+          icon: <CheckCircle2 className="w-16 h-16 text-green-500 mb-4" />,
+          title: "Thanks for your feedback!",
+          description: "Your rating has been recorded and will help us improve your digest.",
+          buttonText: "Go to Dashboard",
+          buttonLink: "/"
+        };
       case 'forbidden':
         return {
           icon: <ShieldAlert className="w-16 h-16 text-yellow-500 mb-4" />,

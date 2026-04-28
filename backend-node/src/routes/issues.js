@@ -3,6 +3,9 @@ const router = express.Router();
 const issueController = require('../controllers/issueController');
 const adminOrBackendCheck = require('../middleware/adminMiddleware');
 
+// Get consecutive unread issue count for a newsletter + user (admin/backend only)
+router.get('/byNewsletterId/:newsletterId/consecutive-unread/:userId', adminOrBackendCheck, issueController.getConsecutiveUnreadCount);
+
 // Get all issues for the authenticated user
 router.get('/', issueController.getIssuesForAuthenticatedUser);
 

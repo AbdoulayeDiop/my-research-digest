@@ -5,5 +5,6 @@ const publicController = require('../controllers/publicController');
 // Route to handle marking an issue as read from an email
 // GET /:issueId/mark-as-read
 router.get('/:issueId/mark-as-read', publicController.markAsReadFromEmail);
+router.get('/:issueId/feedback', publicController.submitFeedbackFromEmail);
 
 module.exports = router;

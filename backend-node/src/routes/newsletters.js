@@ -15,6 +15,12 @@ router.get('/', newsletterController.getAuthenticatedUserNewsletters);
 // Get all newsletters (admin only)
 router.get('/all', adminOrBackendCheck, newsletterController.getAllNewsletters);
 
+// Get newsletters overdue for generation (admin only)
+router.get('/overdue', adminOrBackendCheck, newsletterController.getOverdueNewsletters);
+
+// Reset lastSearch to queue a newsletter for the next worker run (admin only)
+router.post('/:id/reset-last-search', adminOrBackendCheck, newsletterController.resetNewsletterLastSearch);
+
 
 
 // Get a single newsletter by ID

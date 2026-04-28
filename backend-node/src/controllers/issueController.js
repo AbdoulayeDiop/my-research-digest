@@ -200,6 +200,30 @@ exports.getIssuePaperCount = async (req, res) => {
   }
 };
 
+exports.getConsecutiveUnreadCount = async (req, res) => {
+  try {
+    const { newsletterId, userId } = req.params;
+
+    const issues = await Issue.find({ newsletterId })
+      .sort({ publicationDate: -1 })
+      .limit(4);
+
+    let count = 0;
+    for (const issue of issues) {
+      const reading = await Reading.findOne({ issueId: issue._id, userId });
+      if (!reading) {
+        count++;
+      } else {
+        break;
+      }
+    }
+
+    res.json({ count });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 exports.getIssueReadStatus = async (req, res) => {
   try {
     if (!req.auth || !req.auth.payload || !req.auth.payload.sub) {
