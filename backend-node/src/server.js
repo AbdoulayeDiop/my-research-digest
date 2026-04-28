@@ -8,6 +8,7 @@ const issueRoutes = require('./routes/issues');
 const paperRoutes = require('./routes/papers');
 const userRoutes = require('./routes/users');
 const publicRoutes = require('./routes/public');
+const announcementRoutes = require('./routes/announcements');
 const jwtCheck = require('./middleware/authMiddleware');
 
 const app = express();
@@ -32,6 +33,7 @@ mongoose.connect(MONGODB_URI)
 // API Routes
 app.use('/api/public/issues', publicRoutes); // Public route for actions like marking as read from email
 
+app.use('/api/announcements', jwtCheck, announcementRoutes);
 app.use('/api/newsletters', jwtCheck, newsletterRoutes);
 app.use('/api/issues', jwtCheck, issueRoutes); // For general issue operations (like count)
 app.use('/api/papers', jwtCheck, paperRoutes);

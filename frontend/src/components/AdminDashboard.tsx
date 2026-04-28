@@ -12,6 +12,18 @@ import {
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
+import { Textarea } from "./ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "./ui/alert-dialog";
 
 interface AdminDashboardProps {
   onBack: () => void;
@@ -35,6 +47,11 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [newslettersSearchQuery, setNewslettersSearchQuery] = useState("");
   const [overdueNewsletters, setOverdueNewsletters] = useState<any[]>([]);
   const [queuingIds, setQueuingIds] = useState<Set<string>>(new Set());
+
+  const [announcementSubject, setAnnouncementSubject] = useState("");
+  const [announcementHtml, setAnnouncementHtml] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const [sendResult, setSendResult] = useState<{ sent: number; failed: number; total: number } | null>(null);
 
   const filteredUsers = usersData.filter(
     (user) =>
@@ -125,6 +142,22 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
 
     fetchData();
   }, [axios]);
+
+  const handleSendAnnouncement = async () => {
+    setIsSending(true);
+    setSendResult(null);
+    try {
+      const res = await axios.post(`/announcements/send`, {
+        subject: announcementSubject,
+        html: announcementHtml,
+      });
+      setSendResult(res.data);
+    } catch (err) {
+      console.error("Failed to send announcement:", err);
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   const handleQueue = async (newsletterId: string) => {
     setQueuingIds((prev) => new Set(prev).add(newsletterId));
@@ -232,6 +265,68 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
           </div>
         </>
       )}
+
+          {/* Announcements */}
+          <div className="mt-10">
+            <h2 className="text-2xl font-bold mb-4">Send Announcement</h2>
+            <div className="bg-card border rounded-lg p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Subject</label>
+                <Input
+                  placeholder="e.g. New feature: issue feedback from email"
+                  value={announcementSubject}
+                  onChange={(e) => setAnnouncementSubject(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Body (HTML — use <code>{"{{name}}"}</code> for the recipient's name)
+                </label>
+                <Textarea
+                  placeholder="<p>Hi {{name}}, ...</p>"
+                  value={announcementHtml}
+                  onChange={(e) => setAnnouncementHtml(e.target.value)}
+                  rows={8}
+                  className="font-mono text-sm"
+                />
+              </div>
+
+              {sendResult && (
+                <div className="flex items-center gap-2 text-sm rounded-md border px-4 py-3 bg-muted">
+                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                  Sent to <strong>{sendResult.sent}</strong> of <strong>{sendResult.total}</strong> users
+                  {sendResult.failed > 0 && (
+                    <span className="text-destructive ml-1">({sendResult.failed} failed)</span>
+                  )}
+                </div>
+              )}
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    disabled={isSending || !announcementSubject.trim() || !announcementHtml.trim()}
+                  >
+                    {isSending ? "Sending..." : `Send to all ${stats.totalUsers} users`}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Send announcement to all users?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will send <strong>"{announcementSubject}"</strong> to all{" "}
+                      <strong>{stats.totalUsers}</strong> users. This cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleSendAnnouncement}>
+                      Yes, send it
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
 
       <div className="mt-8">
         <button onClick={onBack} className="text-primary hover:underline">

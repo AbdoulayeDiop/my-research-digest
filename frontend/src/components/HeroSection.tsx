@@ -1,4 +1,4 @@
-import { ArrowRight, BookOpen, Github, Brain, Database } from "lucide-react";
+import { ArrowRight, BookOpen, Github, Brain, Database, Star } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 
@@ -46,9 +46,13 @@ export function HeroSection({ onGetStarted, onSignIn }: HeroSectionProps) {
             <p className="text-sm font-medium">AI-Assisted Synthesis</p>
           </div>
           <div className="bg-card/50 rounded-lg p-4 border">
-            <a href="https://github.com/AbdoulayeDiop/my-research-digest" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
-              <Github className="w-5 h-5 text-primary mr-2" />
+            <a href="https://github.com/AbdoulayeDiop/my-research-digest" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 group">
+              <Github className="w-5 h-5 text-primary" />
               <p className="text-sm font-medium">Open Source</p>
+              <span className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-yellow-500 transition-colors">
+                <Star className="w-3.5 h-3.5" />
+                Star
+              </span>
             </a>
           </div>
         </div>

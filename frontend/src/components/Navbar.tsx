@@ -151,8 +151,6 @@ export default function Navbar({ onSignIn, onSignOut, user }: NavbarProps) {
           ) : (
             <div className="flex items-center gap-2">
               <ThemeToggle />
-              {/* <Button variant="ghost" onClick={onSignIn}>Sign In</Button> */}
-              {/* <Button onClick={onGetStarted}>Sign Up</Button> */}
               <Button onClick={onSignIn}>Sign In</Button>
             </div>
           )}
