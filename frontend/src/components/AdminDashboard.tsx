@@ -213,6 +213,18 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
               <h3 className="text-lg font-semibold">Active Users (7d)</h3>
               <p className="text-3xl font-bold text-primary mt-2">{stats.activeUsers}</p>
             </div>
+            <div className="bg-card rounded-lg p-4 border">
+              <h3 className="text-lg font-semibold">Active Newsletters</h3>
+              <p className="text-3xl font-bold text-green-600 mt-2">
+                {allNewsletters.filter((n) => n.status === "active").length}
+              </p>
+            </div>
+            <div className="bg-card rounded-lg p-4 border">
+              <h3 className="text-lg font-semibold">Inactive Newsletters</h3>
+              <p className="text-3xl font-bold text-muted-foreground mt-2">
+                {allNewsletters.filter((n) => n.status === "inactive").length}
+              </p>
+            </div>
           </div>
 
           {/* Pipeline status */}
@@ -414,6 +426,7 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
               <TableHeader>
                 <TableRow>
                   <TableHead>Topic</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Creator</TableHead>
                   <TableHead>Issues</TableHead>
                   <TableHead>Ranking</TableHead>
@@ -425,6 +438,14 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
                 {currentNewsletters.map((newsletter) => (
                   <TableRow key={newsletter._id}>
                     <TableCell className="font-medium">{newsletter.topic}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={newsletter.status === "active" ? "default" : "secondary"}
+                        className={newsletter.status === "active" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-0" : ""}
+                      >
+                        {newsletter.status}
+                      </Badge>
+                    </TableCell>
                     <TableCell>{newsletter.creatorName || "N/A"}</TableCell>
                     <TableCell>{newsletter.issueCount}</TableCell>
                     <TableCell>
