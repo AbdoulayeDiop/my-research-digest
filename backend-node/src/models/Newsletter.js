@@ -32,6 +32,11 @@ const NewsletterSchema = new mongoose.Schema({
     enum: ['author_based', 'embedding_based'],
     default: 'author_based'
   },
+  frequency: {
+    type: String,
+    enum: ['weekly', 'biweekly', 'monthly'],
+    default: 'weekly'
+  },
   queries: {
     type: [String],
     default: []

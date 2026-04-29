@@ -138,6 +138,8 @@ async def process_newsletter(api_client, newsletter):
         logging.info(f"Newsletter '{newsletter.get('topic')}' is inactive. Skipping.")
         return
 
+    frequency_days = {'weekly': 7, 'biweekly': 14, 'monthly': 30}.get(newsletter.get('frequency', 'weekly'), 7)
+
     last_search = newsletter.get('lastSearch')
     
     # If lastSearch is missing, try to get the date from the latest issue
@@ -154,7 +156,7 @@ async def process_newsletter(api_client, newsletter):
         try:
             last_search_date = datetime.fromisoformat(
                 last_search.replace('Z', '+00:00'))
-            if datetime.now(last_search_date.tzinfo) - last_search_date < timedelta(days=7):
+            if datetime.now(last_search_date.tzinfo) - last_search_date < timedelta(days=frequency_days):
                 logging.info(
                     f"Newsletter '{newsletter['topic']}' was processed recently (based on last search or latest issue). Skipping.")
                 return
@@ -170,7 +172,7 @@ async def process_newsletter(api_client, newsletter):
         newsletter['_id'], {'lastSearch': datetime.now().isoformat()})
 
     now = datetime.now()
-    start_date = (now - timedelta(days=7)).strftime("%Y-%m-%d")
+    start_date = (now - timedelta(days=frequency_days)).strftime("%Y-%m-%d")
     end_date = now.strftime("%Y-%m-%d")
 
     # Get user info for emails

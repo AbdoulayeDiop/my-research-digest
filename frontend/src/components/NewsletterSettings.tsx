@@ -33,6 +33,7 @@ interface Newsletter {
   description: string;
   status: 'active' | 'inactive';
   rankingStrategy: 'author_based' | 'embedding_based';
+  frequency: 'weekly' | 'biweekly' | 'monthly';
   queries: string[];
   filters?: {
     venues: string[];
@@ -114,6 +115,7 @@ export function NewsletterSettings() {
         description: newsletter.description,
         status: newsletter.status,
         rankingStrategy: newsletter.rankingStrategy,
+        frequency: newsletter.frequency,
         queries: newsletter.queries,
         filters: newsletter.filters,
       });
@@ -278,15 +280,35 @@ export function NewsletterSettings() {
               </p>
             </div>
 
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label className="text-base">Digest Frequency</Label>
+                <p className="text-sm text-muted-foreground">How often should new papers be searched and sent?</p>
+              </div>
+              <Select
+                value={newsletter.frequency}
+                onValueChange={(value: 'weekly' | 'biweekly' | 'monthly') => setNewsletter({ ...newsletter, frequency: value })}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select frequency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weekly">Weekly (every 7 days)</SelectItem>
+                  <SelectItem value="biweekly">Bi-weekly (every 14 days)</SelectItem>
+                  <SelectItem value="monthly">Monthly (every 30 days)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div className="space-y-0.5">
                 <Label className="text-base">
                   {newsletter.status === 'active' ? 'The newsletter is active' : 'Activate the newsletter'}
                 </Label>
                 <div className="text-sm text-muted-foreground">
-                  {newsletter.status === 'active' 
-                    ? 'The AI will scan for new research and send your digest every 7 days.' 
-                    : 'Ready? Enable this to start receiving your automated weekly research digests.'}
+                  {newsletter.status === 'active'
+                    ? `The AI will scan for new research and send your digest every ${{ weekly: '7 days', biweekly: '14 days', monthly: '30 days' }[newsletter.frequency] ?? '7 days'}.`
+                    : 'Ready? Enable this to start receiving your automated research digests.'}
                 </div>
               </div>
               <div className="flex items-center gap-2">

@@ -430,6 +430,7 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
                   <TableHead>Creator</TableHead>
                   <TableHead>Issues</TableHead>
                   <TableHead>Ranking</TableHead>
+                  <TableHead>Frequency</TableHead>
                   <TableHead>Last Run</TableHead>
                   <TableHead>Last Issue</TableHead>
                 </TableRow>
@@ -451,6 +452,11 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
                     <TableCell>
                       <Badge variant="secondary">
                         {newsletter.rankingStrategy === "embedding_based" ? "Embedding" : "Author"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {{ weekly: "Weekly", biweekly: "Bi-weekly", monthly: "Monthly" }[newsletter.frequency as string] ?? "Weekly"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">

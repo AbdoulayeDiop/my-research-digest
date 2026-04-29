@@ -189,10 +189,10 @@ exports.getNewsletterById = async (req, res) => {
 // Update a newsletter
 exports.updateNewsletter = async (req, res) => {
   try {
-    const { description, status, rankingStrategy, queries, lastSearch, filters, inactivityWarningSentAt } = req.body;
+    const { description, status, rankingStrategy, frequency, queries, lastSearch, filters, inactivityWarningSentAt } = req.body;
     const updatedNewsletter = await Newsletter.findByIdAndUpdate(
       req.params.id,
-      { description, status, rankingStrategy, queries, lastSearch, filters, inactivityWarningSentAt },
+      { description, status, rankingStrategy, frequency, queries, lastSearch, filters, inactivityWarningSentAt },
       { new: true } // Return the updated document
     );
     if (!updatedNewsletter) {
@@ -246,15 +246,35 @@ exports.deleteNewsletter = async (req, res) => {
 
 exports.getOverdueNewsletters = async (req, res) => {
   try {
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const newsletters = await Newsletter.aggregate([
       {
         $match: {
           status: 'active',
-          $and: [
-            { lastSearch: { $exists: true } },
-            { lastSearch: { $lt: sevenDaysAgo } },
-          ],
+          lastSearch: { $exists: true },
+          $expr: {
+            $lt: [
+              {
+                $add: [
+                  '$lastSearch',
+                  {
+                    $multiply: [
+                      {
+                        $switch: {
+                          branches: [
+                            { case: { $eq: ['$frequency', 'biweekly'] }, then: 14 },
+                            { case: { $eq: ['$frequency', 'monthly'] }, then: 30 },
+                          ],
+                          default: 7
+                        }
+                      },
+                      24 * 60 * 60 * 1000
+                    ]
+                  }
+                ]
+              },
+              new Date()
+            ]
+          }
         },
       },
       {
