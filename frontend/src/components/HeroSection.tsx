@@ -1,4 +1,4 @@
-import { ArrowRight, BookOpen, Github, Brain, Database, Star } from "lucide-react";
+import { ArrowRight, BookOpen, Github, LayoutTemplate, Database, Star } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 
@@ -21,8 +21,8 @@ export function HeroSection({ onGetStarted, onSignIn }: HeroSectionProps) {
         </h1>
         
         <p className="text-xl text-muted-foreground max-w-4xl mx-auto mb-8 leading-relaxed">
-          My Research Digest is a free, open-source tool designed to help you keep up with the ever-growing body of scientific literature. 
-          Get weekly, AI-assisted digests of the most relevant papers in your field.
+          My Research Digest is a free, open-source tool designed to help you keep up with the ever-growing body of scientific literature.
+          Get AI-generated digests of the most relevant papers in your field, delivered at your chosen cadence.
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -42,8 +42,8 @@ export function HeroSection({ onGetStarted, onSignIn }: HeroSectionProps) {
             <p className="text-sm font-medium">Automated Paper Sourcing</p>
           </div>
           <div className="flex items-center justify-center bg-card/50 rounded-lg p-4 border">
-            <Brain className="w-5 h-5 text-primary mr-2" />
-            <p className="text-sm font-medium">AI-Assisted Synthesis</p>
+            <LayoutTemplate className="w-5 h-5 text-primary mr-2" />
+            <p className="text-sm font-medium">Two Digest Formats</p>
           </div>
           <div className="bg-card/50 rounded-lg p-4 border">
             <a href="https://github.com/AbdoulayeDiop/my-research-digest" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 group">

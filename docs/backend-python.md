@@ -15,12 +15,12 @@ The worker (`worker.py`) runs in an infinite loop with a 24-hour sleep interval.
 
 1. **Fetch Newsletters**: Calls the Node.js backend to get all newsletters.
 2. **Inactivity Check** *(active newsletters only)*: Counts consecutive unread issues from most recent. Sends a warning email at 3 and disables the newsletter at 4, to avoid generating unused content.
-3. **Skip Check**: If `lastSearch` (or latest issue date) is within the last 7 days, the newsletter is skipped.
+3. **Skip Check**: If `lastSearch` (or latest issue date) is within the configured frequency window (7 days for weekly, 14 for bi-weekly, 30 for monthly), the newsletter is skipped.
 4. **Search Papers**: Queries Semantic Scholar and OpenAlex with AI-generated queries. Results are deduplicated by normalized title.
 5. **Relevance Filtering**: Each paper's title and abstract are screened by an LLM.
-6. **Ranking**: Papers are scored using the configured strategy (author-based or embedding-based).
-7. **Analysis**: The top papers are analyzed by an LLM to produce a synthesis and a "why it matters" explanation.
-8. **Write Newsletter**: An LLM generates the issue title, introduction, and conclusion.
+6. **Ranking** *(Classic format only)*: Papers are scored using the configured strategy (author-based or embedding-based). Top 5 are selected.
+7. **Analysis** *(Classic format only)*: The top papers are analyzed by an LLM to produce a synthesis and a "why it matters" explanation. *(SotA: steps 6–7 are skipped; up to 10 filtered papers go directly to step 8.)*
+8. **Write Newsletter**: Classic — LLM generates title, introduction, conclusion, and per-paper summaries. SotA — LLM produces a single Markdown literature review (Overview / Key Themes & Methods / Emerging Trends) stored in `contentMarkdown`.
 9. **Persist**: Creates the Issue and its Papers via the Node.js API.
 10. **Send Email**: Delivers the full HTML digest by SMTP, including HMAC-signed "Mark as Read" and feedback buttons.
 
@@ -30,22 +30,24 @@ The worker (`worker.py`) runs in an infinite loop with a 24-hour sleep interval.
 graph TD
     A[Start Daily Cycle] --> B{Fetch All Newsletters};
     B --> C{For Each Newsletter};
-    C --> D{Active?};
-    D -- Yes --> E[Inactivity Check];
-    D -- No --> F{Processed recently?};
-    E --> F;
-    F -- Yes --> G[Skip];
+    C --> D[Inactivity Check];
+    D --> E{Active?}
+    E -- Yes --> F{Processed recently?};
+    E -- No --> G[Skip];
+    F -- Yes --> G;
     F -- No --> H[Generate Queries with LLM];
     H --> I[Search Semantic Scholar + OpenAlex];
     I --> J[Deduplicate Papers];
     J --> K[Filter with LLM];
-    K --> L[Rank Papers];
-    L --> M[Analyze Top Papers with LLM];
-    M --> N[Write Newsletter with LLM];
-    N --> O[Create Issue via Node.js API];
-    O --> P[Send Email Digest];
-    P --> Q[End Cycle];
-    G --> Q;
+    K --> L{issueFormat?};
+    L -- classic --> M[Rank Papers];
+    M --> N[Analyze Top Papers with LLM];
+    N --> O[Write Newsletter with LLM];
+    L -- state_of_the_art --> O;
+    O --> P[Create Issue via Node.js API];
+    P --> Q[Send Email Digest];
+    Q --> R[End Cycle];
+    G --> R;
 ```
 
 ## Paper Search and Ranking Strategy
@@ -67,18 +69,33 @@ Both backends normalize results to a common field schema (`config.py::FIELDS`). 
 
 Each paper's title and abstract are passed to an LLM with the `paper_filterer_prompt`. The model acts as an expert screener and returns a yes/no decision. Papers that fail are discarded.
 
-### 4. Ranking (Two Strategies)
+### 4. Ranking (Two Strategies) — Classic format only
 
 Configurable per newsletter via the `rankingStrategy` field:
 
 - **`author_based`** *(default)*: `log1p(citation_count) + max(author_h_indices)` — prioritizes papers from authoritative, well-cited authors.
 - **`embedding_based`**: Cosine similarity between each paper's abstract embedding and the newsletter's topic description embedding (OpenAI embeddings). Prioritizes semantic closeness to the stated interest.
 
-### 5. Analysis and Synthesis
+### 5. Analysis and Synthesis — Classic format only
 
 For each selected paper, the LLM generates:
 - A **synthesis** of the paper's key findings.
 - A **"why it matters"** explanation for the reader.
+
+## Digest Formats
+
+Configurable per newsletter via the `issueFormat` field.
+
+### Classic
+Top-ranked papers (up to 5) each receive individual LLM analysis — a synthesis and a "why it matters" note. The issue is assembled as introduction + paper cards + conclusion.
+
+### State of the Art (SotA)
+All filtered papers (up to 10) are passed to a single LLM call that produces a cohesive Markdown literature review with three sections:
+- **Overview** (2–3 sentences): dominant research direction and key tension.
+- **Key Themes & Methods**: 2–4 themes grouping papers by shared approach, with inline citations as `[Short Label](url)`.
+- **Emerging Trends**: 1–3 directions gaining momentum, grounded in specific papers.
+
+Per-paper ranking and analysis are skipped. The review is stored in `contentMarkdown` on the Issue; `introduction` and `conclusion` are empty strings.
 
 ## Inactivity Management
 
@@ -106,4 +123,3 @@ Both redirect to a status page on the frontend after completing.
 - **Future Work**:
   - Feed per-paper feedback signals (like/dislike) back into the ranking function.
   - Incorporate paper-level metrics (citation velocity, journal impact factor).
-  - Support configurable digest frequency (bi-weekly, monthly) per newsletter.

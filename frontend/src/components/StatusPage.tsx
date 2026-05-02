@@ -8,11 +8,19 @@ export function StatusPage() {
 
   const getContent = () => {
     switch (type) {
-      case 'success':
+      case 'marked-as-read':
         return {
           icon: <CheckCircle2 className="w-16 h-16 text-green-500 mb-4" />,
           title: "Successfully Marked as Read",
           description: "This issue has been updated in your digest. You can now close this tab or return to your dashboard.",
+          buttonText: "Go to Dashboard",
+          buttonLink: "/"
+        };
+      case 'reactivated':
+        return {
+          icon: <CheckCircle2 className="w-16 h-16 text-green-500 mb-4" />,
+          title: "Newsletter Reactivated",
+          description: "Your newsletter is active again. New issues will resume on your next scheduled run.",
           buttonText: "Go to Dashboard",
           buttonLink: "/"
         };

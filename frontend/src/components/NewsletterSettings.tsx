@@ -34,6 +34,7 @@ interface Newsletter {
   status: 'active' | 'inactive';
   rankingStrategy: 'author_based' | 'embedding_based';
   frequency: 'weekly' | 'biweekly' | 'monthly';
+  issueFormat: 'classic' | 'state_of_the_art';
   queries: string[];
   filters?: {
     venues: string[];
@@ -116,6 +117,7 @@ export function NewsletterSettings() {
         status: newsletter.status,
         rankingStrategy: newsletter.rankingStrategy,
         frequency: newsletter.frequency,
+        issueFormat: newsletter.issueFormat,
         queries: newsletter.queries,
         filters: newsletter.filters,
       });
@@ -256,6 +258,7 @@ export function NewsletterSettings() {
               </Alert>
             </div>
 
+            {newsletter.issueFormat === 'classic' && (
             <div className="space-y-3">
               <div className="space-y-1">
                 <Label className="text-base">Ranking Strategy</Label>
@@ -274,11 +277,12 @@ export function NewsletterSettings() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground italic">
-                {newsletter.rankingStrategy === 'author_based' 
-                  ? "• Prioritizes papers from established researchers with high citation counts." 
+                {newsletter.rankingStrategy === 'author_based'
+                  ? "• Prioritizes papers from established researchers with high citation counts."
                   : "• Prioritizes papers that are semantically closest to your topic and description."}
               </p>
             </div>
+            )}
 
             <div className="space-y-3">
               <div className="space-y-1">
@@ -296,6 +300,25 @@ export function NewsletterSettings() {
                   <SelectItem value="weekly">Weekly (every 7 days)</SelectItem>
                   <SelectItem value="biweekly">Bi-weekly (every 14 days)</SelectItem>
                   <SelectItem value="monthly">Monthly (every 30 days)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label className="text-base">Digest Format</Label>
+                <p className="text-sm text-muted-foreground">How should your digest be structured?</p>
+              </div>
+              <Select
+                value={newsletter.issueFormat}
+                onValueChange={(value: 'classic' | 'state_of_the_art') => setNewsletter({ ...newsletter, issueFormat: value })}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select format" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="state_of_the_art">State of the Art — thematic literature review</SelectItem>
+                  <SelectItem value="classic">Classic — top papers with individual summaries</SelectItem>
                 </SelectContent>
               </Select>
             </div>

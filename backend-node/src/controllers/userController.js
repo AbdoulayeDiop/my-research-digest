@@ -35,16 +35,24 @@ exports.syncUser = async (req, res) => {
     let user = await User.findOne({ auth0Id });
     let isNewUser = false;
 
+    let adminEmails = [];
+    try {
+      const parsed = JSON.parse(process.env.ADMIN_EMAILS || '[]');
+      if (Array.isArray(parsed)) adminEmails = parsed;
+    } catch (_) {}
+    const role = adminEmails.includes(email) ? 'admin' : 'user';
+
     if (!user) {
       // User does not exist, create a new one
-      user = new User({ auth0Id, email, name, lastLoginAt: Date.now() });
+      user = new User({ auth0Id, email, name, lastLoginAt: Date.now(), role });
       await user.save();
       isNewUser = true;
     } else {
       // User exists, update their information and last login time
       user.email = email;
       user.name = name;
-      user.lastLoginAt = Date.now(); // Update last login time
+      user.lastLoginAt = Date.now();
+      user.role = role;
       await user.save();
     }
 
@@ -133,6 +141,18 @@ exports.countUsers = async (req, res) => {
 exports.getUserById = async (req, res) => {
   try {
     const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getUserByAuth0Id = async (req, res) => {
+  try {
+    const user = await User.findOne({ auth0Id: req.params.auth0Id });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }

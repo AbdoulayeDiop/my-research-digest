@@ -68,6 +68,20 @@ class ApiClient:
             logging.error(f"Error retrieving user {user_id} email and name: {e}")
             return None
 
+    def get_user_by_auth0_id(self, auth0_id):
+        """Retrieves a user by their Auth0 ID."""
+        token = self._get_access_token()
+        if not token:
+            return None
+        headers = {'Authorization': f'Bearer {token}'}
+        try:
+            response = self.session.get(f"{self.base_url}/users/by-auth0/{auth0_id}", headers=headers)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Error retrieving user by auth0Id {auth0_id}: {e}")
+            return None
+
     def get_newsletters(self):
         """Retrieves all newsletters from the backend API."""
         token = self._get_access_token()

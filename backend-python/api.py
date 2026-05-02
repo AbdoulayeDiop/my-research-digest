@@ -7,8 +7,12 @@ from newsletter_creator import generate_queries
 from datetime import datetime, timedelta
 import logging
 import asyncio
+import os
 from contextlib import asynccontextmanager
 from auth import auth_verifier
+from worker_state import worker_state
+from api_client import ApiClient
+import time
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -104,6 +108,63 @@ async def test_search(request: TestSearchRequest, token_payload: dict = Depends(
     except Exception as e:
         logging.error(f"Error in test_search endpoint: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+_node_api_client = ApiClient(os.getenv('NODE_API_BASE_URL'))
+_role_cache: dict = {}  # { auth0_id: (role, expires_at) }
+_ROLE_CACHE_TTL = 300   # 5 minutes
+
+def require_admin(token_payload: dict):
+    sub = token_payload.get('sub')
+    if not sub:
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    now = time.time()
+    cached = _role_cache.get(sub)
+    if cached and now < cached[1]:
+        role = cached[0]
+    else:
+        user = _node_api_client.get_user_by_auth0_id(sub)
+        role = user.get('role') if user else None
+        _role_cache[sub] = (role, now + _ROLE_CACHE_TTL)
+
+    if role != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+
+@app.get("/worker/status")
+async def get_worker_status(token_payload: dict = Depends(auth_verifier.verify)):
+    require_admin(token_payload)
+    return {
+        "status": worker_state.status,
+        "cycle_started_at": worker_state.cycle_started_at,
+        "cycle_completed_at": worker_state.cycle_completed_at,
+        "next_cycle_at": worker_state.next_cycle_at,
+        "total_newsletters": worker_state.total_newsletters,
+        "processed_count": worker_state.processed_count,
+        "current_newsletter_topic": worker_state.current_newsletter_topic,
+        "current_step": worker_state.current_step,
+        "cycle_log": worker_state.cycle_log,
+    }
+
+
+@app.post("/worker/trigger")
+async def trigger_worker_cycle(token_payload: dict = Depends(auth_verifier.verify)):
+    require_admin(token_payload)
+    if worker_state.status == "running":
+        raise HTTPException(status_code=409, detail="A cycle is already running")
+    worker_state.manual_trigger = True
+    return {"message": "Cycle triggered"}
+
+
+@app.post("/worker/stop")
+async def stop_worker_cycle(token_payload: dict = Depends(auth_verifier.verify)):
+    require_admin(token_payload)
+    if worker_state.status != "running":
+        raise HTTPException(status_code=409, detail="No cycle is currently running")
+    worker_state.should_stop = True
+    worker_state.status = "stopping"
+    return {"message": "Stop requested — will halt after current newsletter finishes"}
+
 
 if __name__ == "__main__":
     import uvicorn

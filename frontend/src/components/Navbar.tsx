@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from 'react-router-dom';
 import { LogOut, User, BookOpen, Trash2, LayoutDashboard, Bookmark } from "lucide-react";
 import { Button } from "./ui/button";
@@ -26,10 +26,11 @@ import { useAxios } from "../lib/axios";
 import { ThemeToggle } from "./ThemeToggle";
 
 interface User {
-  _id: string; // MongoDB user ID
+  _id: string;
   sub?: string;
   name?: string;
   email?: string;
+  role?: 'user' | 'admin';
 }
 
 interface NavbarProps {
@@ -42,15 +43,7 @@ interface NavbarProps {
 export default function Navbar({ onSignIn, onSignOut, user }: NavbarProps) {
   const navigate = useNavigate();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const axios = useAxios();
-
-  useEffect(() => {
-    if (user?.email) {
-      const adminEmails = import.meta.env.VITE_ADMIN_EMAILS || [];
-      setIsAdmin(adminEmails.includes(user.email));
-    }
-  }, [user?.email]);
 
   const handleDeleteAccount = async () => {
     if (!user?._id) return;
@@ -111,7 +104,7 @@ export default function Navbar({ onSignIn, onSignOut, user }: NavbarProps) {
                     </div>
                   </div>
                   <DropdownMenuSeparator />
-                  {isAdmin && (
+                  {user?.role === 'admin' && (
                     <DropdownMenuItem onClick={() => navigate('/admin')}>
                       <LayoutDashboard className="mr-2 h-4 w-4" />
                       <span>Admin Dashboard</span>

@@ -1,4 +1,4 @@
-import { Search, Brain, Zap, Clock, Shield, Users } from "lucide-react";
+import { Search, Brain, LayoutTemplate, Clock, Shield, Users } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 
 export function FeaturesDeepDiveSection() {
@@ -10,7 +10,7 @@ export function FeaturesDeepDiveSection() {
             Under the Hood: How It Works
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Our system uses a combination of data sourcing, AI ranking, and summarization to deliver your weekly digests.
+            Our system uses a combination of data sourcing, AI ranking, and synthesis to deliver your digests on your schedule.
           </p>
         </div>
 
@@ -46,13 +46,13 @@ export function FeaturesDeepDiveSection() {
           <Card className="border-0 bg-card/50 backdrop-blur">
             <CardHeader className="text-center pb-4" withSeparator={false}>
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Zap className="w-6 h-6 text-primary" />
+                <LayoutTemplate className="w-6 h-6 text-primary" />
               </div>
-              <CardTitle>AI-Powered Summarization</CardTitle>
+              <CardTitle>Two Digest Formats</CardTitle>
             </CardHeader>
             <CardContent>
               <CardDescription className="text-center">
-                Automatically generates comprehensive summaries with key findings, methodologies, and implications for your research area.
+                Classic delivers top-ranked papers with individual AI summaries. State-of-the-Art produces a single literature review — grouping papers by theme, highlighting emerging methods, and flagging tensions across the field.
               </CardDescription>
             </CardContent>
           </Card>
@@ -62,11 +62,11 @@ export function FeaturesDeepDiveSection() {
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Clock className="w-6 h-6 text-primary" />
               </div>
-              <CardTitle>Consistent Weekly Digests</CardTitle>
+              <CardTitle>Configurable Schedule</CardTitle>
             </CardHeader>
             <CardContent>
               <CardDescription className="text-center">
-                Each newsletter is generated on a weekly schedule, ensuring you receive timely and consistent updates on your field.
+                Choose your digest cadence — weekly, bi-weekly, or monthly. The system automatically checks for new papers on your schedule and skips runs when there's nothing new.
               </CardDescription>
             </CardContent>
           </Card>

@@ -3,10 +3,11 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { useAxios } from "../lib/axios";
 
 interface User {
-  _id: string; // MongoDB user ID
-  sub?: string; // Auth0 user ID
+  _id: string;
+  sub?: string;
   name?: string;
   email?: string;
+  role?: 'user' | 'admin';
 }
 
 export function useUserSync() {
@@ -23,8 +24,8 @@ export function useUserSync() {
             email: user.email,
             name: user.name,
           });
-          setSyncedUser({ ...user, _id: response.data._id });
-          console.log("User synced:", { ...user, _id: response.data._id });
+          setSyncedUser({ ...user, _id: response.data._id, role: response.data.role });
+          console.log("User synced:", { ...user, _id: response.data._id, role: response.data.role });
         } catch (error) {
           console.error("Error syncing user:", error);
         }

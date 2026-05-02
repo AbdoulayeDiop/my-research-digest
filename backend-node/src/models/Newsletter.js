@@ -37,6 +37,11 @@ const NewsletterSchema = new mongoose.Schema({
     enum: ['weekly', 'biweekly', 'monthly'],
     default: 'weekly'
   },
+  issueFormat: {
+    type: String,
+    enum: ['classic', 'state_of_the_art'],
+    default: 'state_of_the_art'
+  },
   queries: {
     type: [String],
     default: []

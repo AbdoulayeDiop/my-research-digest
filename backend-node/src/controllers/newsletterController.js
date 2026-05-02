@@ -189,10 +189,10 @@ exports.getNewsletterById = async (req, res) => {
 // Update a newsletter
 exports.updateNewsletter = async (req, res) => {
   try {
-    const { description, status, rankingStrategy, frequency, queries, lastSearch, filters, inactivityWarningSentAt } = req.body;
+    const { description, status, rankingStrategy, frequency, issueFormat, queries, lastSearch, filters, inactivityWarningSentAt } = req.body;
     const updatedNewsletter = await Newsletter.findByIdAndUpdate(
       req.params.id,
-      { description, status, rankingStrategy, frequency, queries, lastSearch, filters, inactivityWarningSentAt },
+      { description, status, rankingStrategy, frequency, issueFormat, queries, lastSearch, filters, inactivityWarningSentAt },
       { new: true } // Return the updated document
     );
     if (!updatedNewsletter) {

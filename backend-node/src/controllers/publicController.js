@@ -1,7 +1,8 @@
 const crypto = require('crypto');
 const Issue = require('../models/Issue');
-const Reading = require('../models/Reading'); // Import Reading model
-const User = require('../models/User'); // Import User model to find user by ID
+const Reading = require('../models/Reading');
+const User = require('../models/User');
+const Newsletter = require('../models/Newsletter');
 
 
 exports.submitFeedbackFromEmail = async (req, res) => {
@@ -37,6 +38,40 @@ exports.submitFeedbackFromEmail = async (req, res) => {
 
   } catch (error) {
     console.error('Error submitting feedback from email:', error);
+    const appDomain = process.env.APP_DOMAIN || 'http://localhost';
+    res.redirect(`${appDomain}/status/error`);
+  }
+};
+
+exports.reactivateNewsletterFromEmail = async (req, res) => {
+  try {
+    const { newsletterId } = req.params;
+    const { userId, signature } = req.query;
+    const secret = process.env.URL_SIGNATURE_SECRET;
+    const appDomain = process.env.APP_DOMAIN || 'http://localhost';
+
+    if (!userId || !signature || !secret) {
+      return res.redirect(`${appDomain}/status/error`);
+    }
+
+    const dataToSign = `${newsletterId}${userId}reactivate`;
+    const expectedSignature = crypto.createHmac('sha256', secret).update(dataToSign).digest('hex');
+
+    if (signature.length !== expectedSignature.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+      return res.redirect(`${appDomain}/status/forbidden`);
+    }
+
+    const newsletter = await Newsletter.findById(newsletterId);
+    if (!newsletter) return res.redirect(`${appDomain}/status/error`);
+
+    const user = await User.findById(userId);
+    if (!user) return res.redirect(`${appDomain}/status/error`);
+
+    await Newsletter.findByIdAndUpdate(newsletterId, { status: 'active', inactivityWarningSentAt: null });
+    return res.redirect(`${appDomain}/status/reactivated`);
+
+  } catch (error) {
+    console.error('Error reactivating newsletter from email:', error);
     const appDomain = process.env.APP_DOMAIN || 'http://localhost';
     res.redirect(`${appDomain}/status/error`);
   }
@@ -83,7 +118,7 @@ exports.markAsReadFromEmail = async (req, res) => {
       );
 
       // Redirect to the success page
-      return res.redirect(`${appDomain}/status/success`);
+      return res.redirect(`${appDomain}/status/marked-as-read`);
 
     } else {
       // Signature is invalid

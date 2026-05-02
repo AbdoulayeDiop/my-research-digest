@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAxios } from "../lib/axios";
+import { toast } from "sonner";
 import { Search, AlertTriangle, CheckCircle } from "lucide-react";
 import {
   Table,
@@ -24,6 +25,26 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "./ui/alert-dialog";
+
+interface CycleLogEntry {
+  topic: string;
+  newsletter_id: string;
+  status: string;
+  papers_found: number;
+  issue_id: string | null;
+}
+
+interface WorkerStatus {
+  status: 'idle' | 'running' | 'stopping';
+  cycle_started_at: string | null;
+  cycle_completed_at: string | null;
+  next_cycle_at: string | null;
+  total_newsletters: number;
+  processed_count: number;
+  current_newsletter_topic: string | null;
+  current_step: string | null;
+  cycle_log: CycleLogEntry[];
+}
 
 interface AdminDashboardProps {
   onBack: () => void;
@@ -76,7 +97,11 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [workerStatus, setWorkerStatus] = useState<WorkerStatus | null>(null);
+  const [workerActionLoading, setWorkerActionLoading] = useState(false);
   const axios = useAxios();
+  const pythonApiUrl = import.meta.env.VITE_PYTHON_API_URL || 'http://localhost:8000';
+  const axiosPython = useAxios(pythonApiUrl);
 
   const formatRelativeTime = (dateString: string) => {
     if (!dateString) return "Never";
@@ -90,6 +115,17 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
     if (diffInHours < 24) return `${diffInHours}h ago`;
     const diffInDays = Math.floor(diffInHours / 24);
     return `${diffInDays}d ago`;
+  };
+
+  const formatFutureTime = (dateString: string | null) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    const diffMs = date.getTime() - Date.now();
+    if (diffMs <= 0) return "soon";
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 60) return `in ${diffMins}m`;
+    const diffHours = Math.floor(diffMins / 60);
+    return `in ${diffHours}h`;
   };
 
   const fetchOverdue = useCallback(async () => {
@@ -142,6 +178,40 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
 
     fetchData();
   }, [axios]);
+
+  useEffect(() => {
+    const poll = () =>
+      axiosPython.get('/worker/status').then(r => setWorkerStatus(r.data)).catch(() => {});
+    poll();
+    const id = setInterval(poll, 5000);
+    return () => clearInterval(id);
+  }, [axiosPython]);
+
+  const handleWorkerTrigger = async () => {
+    setWorkerActionLoading(true);
+    try {
+      await axiosPython.post('/worker/trigger');
+      toast.success("Cycle started — status will update shortly.");
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail;
+      toast.error(detail || "Failed to trigger worker cycle.");
+    } finally {
+      setWorkerActionLoading(false);
+    }
+  };
+
+  const handleWorkerStop = async () => {
+    setWorkerActionLoading(true);
+    try {
+      await axiosPython.post('/worker/stop');
+      toast.success("Stop requested — will halt after the current newsletter finishes.");
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail;
+      toast.error(detail || "Failed to stop worker cycle.");
+    } finally {
+      setWorkerActionLoading(false);
+    }
+  };
 
   const handleSendAnnouncement = async () => {
     setIsSending(true);
@@ -274,6 +344,97 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
                 </Table>
               </div>
             )}
+          </div>
+
+          {/* Worker Monitor */}
+          <div className="mt-10">
+            <h2 className="text-2xl font-bold mb-4">Worker Monitor</h2>
+            <div className="bg-card border rounded-lg p-6 space-y-4">
+              {!workerStatus ? (
+                <p className="text-sm text-muted-foreground">Connecting to worker...</p>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div className="flex items-center gap-3">
+                      <Badge
+                        variant={workerStatus.status === 'running' ? 'default' : workerStatus.status === 'stopping' ? 'outline' : 'secondary'}
+                        className={workerStatus.status === 'running' ? 'animate-pulse' : ''}
+                      >
+                        {workerStatus.status}
+                      </Badge>
+                      {workerStatus.status === 'running' && (
+                        <span className="text-sm text-muted-foreground">
+                          {workerStatus.processed_count} / {workerStatus.total_newsletters} newsletters
+                          {workerStatus.current_newsletter_topic && (
+                            <> — <span className="font-medium text-foreground">{workerStatus.current_newsletter_topic}</span> ({workerStatus.current_step})</>
+                          )}
+                        </span>
+                      )}
+                      {workerStatus.status === 'idle' && (
+                        <span className="text-sm text-muted-foreground">
+                          {workerStatus.next_cycle_at && <>Next cycle {formatFutureTime(workerStatus.next_cycle_at)}</>}
+                          {workerStatus.cycle_completed_at && <> · Last completed {formatRelativeTime(workerStatus.cycle_completed_at)}</>}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      {workerStatus.status === 'running' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={workerActionLoading}
+                          onClick={handleWorkerStop}
+                        >
+                          Stop after current
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        disabled={workerStatus.status !== 'idle' || workerActionLoading}
+                        onClick={handleWorkerTrigger}
+                      >
+                        Run Now
+                      </Button>
+                    </div>
+                  </div>
+
+                  {workerStatus.cycle_log.length > 0 && (
+                    <div className="rounded-md border mt-2">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Topic</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Papers</TableHead>
+                            <TableHead>Issue</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {workerStatus.cycle_log.map((entry, i) => (
+                            <TableRow key={i}>
+                              <TableCell className="font-medium max-w-[200px] truncate">{entry.topic}</TableCell>
+                              <TableCell>
+                                <Badge variant={
+                                  entry.status === 'success' ? 'default' :
+                                  entry.status === 'skipped' || entry.status === 'inactive' ? 'secondary' :
+                                  'destructive'
+                                }>
+                                  {entry.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{entry.papers_found}</TableCell>
+                              <TableCell className="text-muted-foreground text-xs">
+                                {entry.issue_id ? entry.issue_id.slice(-6) : '—'}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </>
       )}
@@ -429,6 +590,7 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
                   <TableHead>Status</TableHead>
                   <TableHead>Creator</TableHead>
                   <TableHead>Issues</TableHead>
+                  <TableHead>Format</TableHead>
                   <TableHead>Ranking</TableHead>
                   <TableHead>Frequency</TableHead>
                   <TableHead>Last Run</TableHead>
@@ -449,6 +611,11 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
                     </TableCell>
                     <TableCell>{newsletter.creatorName || "N/A"}</TableCell>
                     <TableCell>{newsletter.issueCount}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {newsletter.issueFormat === "state_of_the_art" ? "SotA" : "Classic"}
+                      </Badge>
+                    </TableCell>
                     <TableCell>
                       <Badge variant="secondary">
                         {newsletter.rankingStrategy === "embedding_based" ? "Embedding" : "Author"}

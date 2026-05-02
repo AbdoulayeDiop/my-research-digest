@@ -1,5 +1,5 @@
 import prompts
-from data_models import RelevanceOutput, QueryGeneratorOutput, PaperAnalyzerOutput, NewsletterWriterOutput
+from data_models import RelevanceOutput, QueryGeneratorOutput, PaperAnalyzerOutput, NewsletterWriterOutput, SotANewsletterOutput
 from paper_search import SemanticSearch, OpenAlexSearch
 import asyncio
 from typing import List, Dict, Optional
@@ -24,18 +24,18 @@ def generate_queries(topic: str, description: str, model: str="gpt-5-mini") -> L
 
 def get_paper_score(paper: Dict) -> float:
     """
-    Computes a score for a paper based on the maximum h-index among its authors 
+    Computes a score for a paper based on the maximum h-index among its authors
     and its own citation count.
     """
     citation_score = paper.get("citationCount", 0) or 0
-    
+
     # Author influence: consider h-index only as requested
     max_h_index = 0
     if paper.get("authors"):
         h_indexes = [author.get("hIndex", 0) or 0 for author in paper.get("authors")]
         if h_indexes:
             max_h_index = max(h_indexes)
-    
+
     # Combined score: log(citations) + h_index
     # We use max h-index as it represents the "most senior/influential" author on the paper
     return float(np.log1p(citation_score) + max_h_index)
@@ -63,7 +63,7 @@ class NewsletterCreator:
                     print(f"Failed to update newsletter {newsletter_id} with queries: {e}")
         else:
             print("Using stored search queries:", queries)
-            
+
         searchers = []
         if search_engine == "openalex":
             searchers.append(OpenAlexSearch())
@@ -79,7 +79,7 @@ class NewsletterCreator:
                 results.extend(searcher.search(
                     query, start_date, max_papers, end_date=end_date, filters=filters))
                 time.sleep(1) # Add a 1-second delay to respect API rate limits
-        
+
         # Filter unique papers (by title normalization if IDs differ, but paperId is usually a good start)
         # We use a dict to deduplicate by title (normalized) to catch papers found across different engines
         unique_papers = {}
@@ -87,42 +87,48 @@ class NewsletterCreator:
             title_norm = re.sub(r'\W+', '', p["title"].lower())
             if title_norm not in unique_papers:
                 unique_papers[title_norm] = p
-        
+
         return list(unique_papers.values())
 
-    async def create_newsletter(self, topic: str, start_date: str, description: str="", nb_papers: int = 5, end_date: str = None, max_papers: int = 10, queries=None, ranking_strategy='author_based', filters=None, newsletter_id=None, search_engine="semantic_scholar") -> NewsletterWriterOutput:
+    async def create_newsletter(self, topic: str, start_date: str, description: str="", nb_papers: int = 5, end_date: str = None, max_papers: int = 10, queries=None, ranking_strategy='author_based', filters=None, newsletter_id=None, search_engine="semantic_scholar", issue_format: str = 'classic') -> Dict:
         print(f"Searching for papers (engine: {search_engine}, strategy: {ranking_strategy}, filters: {filters})...")
         papers = self.search(topic, description=description, start_date=start_date, end_date=end_date, max_papers=max_papers, queries=queries, filters=filters, newsletter_id=newsletter_id, search_engine=search_engine)
         if papers:
             print(f"Found {len(papers)} papers. Filtering for relevance...")
             papers = await self.filter_papers(topic, papers, description=description)
+            print(f"{len(papers)} papers are relevant.")
             if len(papers) > 0:
-                print(f"{len(papers)} papers are relevant. Analyzing papers...")
-                
-                if ranking_strategy == 'author_based':
-                    for p in papers:
-                        p["score"] = get_paper_score(p)
-                    papers = sorted(papers, key=lambda p: p["score"], reverse=True)[:nb_papers]
+                if issue_format == 'state_of_the_art':
+                    print(f"Writing state-of-the-art review for {len(papers)} papers...")
+                    newsletter = self.write_sota_newsletter(topic, papers, description=description)
+                    papers_with_analysis = [{"paper": p, "analysis": {"synthesis": None, "usefulness": None}} for p in papers]
                 else:
-                    response = self.client.embeddings.create(
-                        model=self.embedding_model,
-                        input=[f"{topic}\n{description}"] + [p["abstract"] for p in papers]
-                    )
-                    embbedings = [obj.embedding for obj in response.data]
+                    print(f"Ranking and top-{nb_papers} selection...")
+                    if ranking_strategy == 'author_based':
+                        for p in papers:
+                            p["score"] = get_paper_score(p)
+                        papers = sorted(papers, key=lambda p: p["score"], reverse=True)[:nb_papers]
+                    else:
+                        response = self.client.embeddings.create(
+                            model=self.embedding_model,
+                            input=[f"{topic}\n{description}"] + [p["abstract"] for p in papers]
+                        )
+                        embbedings = [obj.embedding for obj in response.data]
 
-                    v0 = embbedings[0]
-                    norm0 = np.linalg.norm(v0)
+                        v0 = embbedings[0]
+                        norm0 = np.linalg.norm(v0)
 
-                    for i, p in enumerate(papers):
-                        emb = embbedings[i + 1]
-                        p["score"] = np.dot(v0, emb)/(norm0 * np.linalg.norm(emb))
+                        for i, p in enumerate(papers):
+                            emb = embbedings[i + 1]
+                            p["score"] = np.dot(v0, emb)/(norm0 * np.linalg.norm(emb))
 
-                    papers = sorted(papers, key=lambda p: p["score"], reverse=True)[:nb_papers]
-                    
-                analyzes = await self.analyze_papers(topic, papers, description=description)
-                papers_with_analysis = [{"paper": paper, "analysis": analysis.model_dump(
-                )} for paper, analysis in zip(papers, analyzes)]
-                newsletter = self.write_newsletter(topic, papers_with_analysis, description=description)
+                        papers = sorted(papers, key=lambda p: p["score"], reverse=True)[:nb_papers]
+
+                    print(f"Analyzing {len(papers)} papers...")
+                    analyzes = await self.analyze_papers(topic, papers, description=description)
+                    papers_with_analysis = [{"paper": paper, "analysis": analysis.model_dump()} for paper, analysis in zip(papers, analyzes)]
+                    newsletter = self.write_newsletter(topic, papers_with_analysis, description=description)
+
                 return {'newsletter': newsletter, 'papers': papers_with_analysis}
         return None
 
@@ -170,6 +176,42 @@ class NewsletterCreator:
         tasks = [do_analysis(paper) for paper in papers]
         results = await asyncio.gather(*tasks)
         return results
+
+    def write_sota_newsletter(self, topic: str, papers: List[Dict], description: str = "") -> Dict:
+        papers_list = ""
+        for i, p in enumerate(papers, 1):
+            authors = ", ".join(a.get("name", "") for a in p.get("authors", []))
+            papers_list += f'{i}. "{p["title"]}" by {authors} ({p.get("url", "")})\nAbstract: {p.get("abstract", "")}\n\n'
+
+        response = self.client.responses.parse(
+            model="gpt-5.4-mini",
+            input=prompts.sota_newsletter_prompt.format(
+                topic=topic,
+                description=description,
+                papers_list=papers_list
+            ),
+            reasoning={"effort": "medium"},
+            text_format=SotANewsletterOutput
+        )
+        parsed: SotANewsletterOutput = response.output_parsed
+
+        summary_response = self.client.responses.create(
+            model=self.model,
+            input=prompts.newsletter_summary_prompt.format(
+                topic=topic,
+                newsletter=parsed.content_markdown
+            )
+        )
+
+        return {
+            'title': parsed.title,
+            'introduction': '',
+            'conclusion': '',
+            'summary': summary_response.output_text,
+            'papers_section': '',
+            'content_markdown': parsed.content_markdown,
+            'is_sota': True,
+        }
 
     def write_newsletter(self, topic, papers_with_analysis: List[Dict], description: str="") -> Dict:
         papers_summary = ""
@@ -236,10 +278,9 @@ if __name__ == "__main__":
     async def main():
         creator = NewsletterCreator()
         result = await creator.create_newsletter(
-            "new llm architectures", "2026-01-06", 
+            "new llm architectures", "2026-01-06",
             description="New Large Language Models with novel architecture or new innovations",
-            end_date="2026-01-14", max_papers=10, ranking_strategy="embedding_based",
-            search_engine="openalex")
+            end_date="2026-01-14", max_papers=10, issue_format='state_of_the_art')
         if result and "newsletter" in result:
             print(result["newsletter"]["content_markdown"])
 

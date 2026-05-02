@@ -136,25 +136,19 @@ export function IssuesList({ onViewIssue, showHeader = true }: IssuesListProps) 
     <div className={`max-w-6xl mx-auto ${showHeader ? 'p-6' : 'py-6'}`}>
 
       {/* Issues Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <div className="bg-card rounded-lg p-4 border">
-          <h3>Total Issues</h3>
-          <p className="text-muted-foreground mt-1">{issues.length}</p>
+      {issues.length > 0 && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
+          <span>{issues.length} {issues.length === 1 ? 'issue' : 'issues'}</span>
+          <span className="opacity-30">·</span>
+          <span>{issues.reduce((sum, issue) => sum + (issue.paperCount || 0), 0)} papers</span>
+          <span className="opacity-30">·</span>
+          <span>Last published {new Date(issues[0].publicationDate).toLocaleDateString()}</span>
         </div>
-        <div className="bg-card rounded-lg p-4 border">
-          <h3>Latest Issue</h3>
-          <p className="text-muted-foreground mt-1">{issues.length > 0 ? new Date(issues[0].publicationDate).toLocaleDateString() : 'N/A'}</p>
-        </div>
-        <div className="bg-card rounded-lg p-4 border">
-          <h3>Total Papers</h3>
-          <p className="text-muted-foreground mt-1">{issues.reduce((sum, issue) => sum + (issue.paperCount || 0), 0)}</p>
-        </div>
-      </div>
+      )}
 
       {/* Issues List */}
       <TooltipProvider>
         <div className="space-y-4">
-          <h2>All Issues</h2>
 
           {issues.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">No issues found for this newsletter.</div>
@@ -204,7 +198,7 @@ export function IssuesList({ onViewIssue, showHeader = true }: IssuesListProps) 
                       </CardHeader>
 
                       <CardContent>
-                        <p className="text-muted-foreground">
+                        <p className="text-muted-foreground line-clamp-3">
                           {issue.summary}
                         </p>
                       </CardContent>

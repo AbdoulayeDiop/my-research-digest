@@ -1,7 +1,9 @@
 import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, Calendar, ExternalLink, ThumbsUp, ThumbsDown, Heart, Bookmark, BookmarkCheck } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
+import ReactMarkdown from 'react-markdown';
 
 import { useState, useEffect } from "react";
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
@@ -14,6 +16,7 @@ interface Issue {
   publicationDate: string;
   introduction: string;
   conclusion: string;
+  contentMarkdown?: string;
   papers: string[];
   status: "published" | "draft";
   newsletterId: string;
@@ -38,6 +41,7 @@ interface Paper {
 interface Newsletter {
     _id: string;
     userId: string;
+    issueFormat?: 'classic' | 'state_of_the_art';
 }
 
 interface IssueDetailProps {
@@ -227,93 +231,188 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
             </div>
           </div>
 
-          <div className="bg-muted/30 rounded-lg p-4 mt-8 shadow-sm">
-            <h3 className="mb-2">Introduction</h3>
-            <p className="text-muted-foreground leading-relaxed">
-              {issue.introduction}
-            </p>
-          </div>
+          {newsletter?.issueFormat !== 'state_of_the_art' && issue.introduction && (
+            <div className="bg-muted/30 rounded-lg p-4 mt-8 shadow-sm">
+              <h3 className="mb-2">Introduction</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                {issue.introduction}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
-      <div>
-        <h2 className="mb-4">Featured Research Papers</h2>
-        {papers.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">No papers found for this issue.</div>
-        ) : (
-          <div className="space-y-6">
-            {papers.map((paper, index) => (
-              <Card key={paper._id} className="shadow-sm hover:shadow-md transition-shadow">
-                <CardHeader withSeparator={false}>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 mr-4">
-                      <CardTitle className="text-lg leading-snug mb-2 font-bold">
-                        {`${index + 1}. ${paper.title}`}
-                      </CardTitle>
-                      <div className="text-sm text-muted-foreground mb-2">
-                        <span>{paper.authors.join(", ")}</span>
-                        {paper.venueName && (
-                          <span className="ml-2 text-xs text-gray-500">({paper.venueName})</span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>{new Date(paper.publicationDate).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        title={savedPaperIds.has(paper.paperId || paper._id) ? "Unsave paper" : "Save paper"}
-                        onClick={() => handleToggleSavePaper(paper)}
-                      >
-                        {savedPaperIds.has(paper.paperId || paper._id) ? (
-                          <BookmarkCheck className="w-4 h-4 text-primary" />
-                        ) : (
-                          <Bookmark className="w-4 h-4" />
-                        )}
-                      </Button>
-                      <a href={paper.url} target="_blank" rel="noopener noreferrer">
-                        <Button variant="ghost" size="sm">
-                          <ExternalLink className="w-4 h-4" />
-                        </Button>
-                      </a>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <h4 className="font-semibold">Synthesis</h4>
-                  <p className="text-base text-muted-foreground mb-2">
-                    {paper.synthesis}
-                  </p>
-                  <h4 className="font-semibold">Why it matters?</h4>
-                  <p className="text-base text-muted-foreground">
-                    {paper.usefulness}
-                  </p>
-                </CardContent>
-                <CardFooter className="flex justify-end gap-4">
-                  <Button variant="ghost" size="icon" onClick={() => handleFeedback(paper._id, paper.feedback === 'like' ? null : 'like')}>
-                    <ThumbsUp className={`w-5 h-5 ${paper.feedback === 'like' ? 'text-blue-500' : 'text-muted-foreground'}`} fill={paper.feedback === 'like' ? 'currentColor' : 'none'} />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleFeedback(paper._id, paper.feedback === 'dislike' ? null : 'dislike')}>
-                    <ThumbsDown className={`w-5 h-5 ${paper.feedback === 'dislike' ? 'text-red-500' : 'text-muted-foreground'}`} fill={paper.feedback === 'dislike' ? 'currentColor' : 'none'} />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleFeedback(paper._id, paper.feedback === 'heart' ? null : 'heart')}>
-                    <Heart className={`w-5 h-5 ${paper.feedback === 'heart' ? 'text-pink-500' : 'text-muted-foreground'}`} fill={paper.feedback === 'heart' ? 'currentColor' : 'none'} />
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+      {newsletter?.issueFormat === 'state_of_the_art' ? (
+        <>
+          <div className="mb-8 leading-relaxed">
+            <ReactMarkdown
+              components={{
+                h2: ({ children }) => <h2 className="text-xl font-bold mt-8 mb-2">{children}</h2>,
+                h3: ({ children }) => <h3 className="text-base font-semibold mt-5 mb-1">{children}</h3>,
+                p:  ({ children }) => <p className="mb-4 text-base">{children}</p>,
+                strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                a:  ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:opacity-75">{children}</a>,
+                ul: ({ children }) => <ul className="list-disc list-inside mb-4 space-y-1">{children}</ul>,
+                li: ({ children }) => <li className="ml-2">{children}</li>,
+              }}
+            >
+              {issue.contentMarkdown ?? ''}
+            </ReactMarkdown>
           </div>
-        )}
-      </div>
 
-      <div className="mt-8 bg-muted/30 rounded-lg p-4 shadow-sm">
-        <h3 className="mb-2">Conclusion</h3>
-        <p className="text-muted-foreground leading-relaxed">
-          {issue.conclusion}
-        </p>
-      </div>
+          <div>
+            <h2 className="mb-4">Papers in this issue</h2>
+            {papers.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">No papers found for this issue.</div>
+            ) : (
+              <div className="space-y-3">
+                {papers.map((paper, index) => (
+                  <Card key={paper._id} className="shadow-sm">
+                    <CardHeader withSeparator={false}>
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                        <div className="flex-1">
+                          <CardTitle className="text-base leading-snug font-semibold">
+                            {`${index + 1}. ${paper.title}`}
+                          </CardTitle>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            <span>{paper.authors.join(", ")}</span>
+                            {paper.venueName && (
+                              <span className="ml-2 text-xs text-gray-500">({paper.venueName})</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0 justify-end sm:justify-start">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title={savedPaperIds.has(paper.paperId || paper._id) ? "Unsave paper" : "Save paper"}
+                            onClick={() => handleToggleSavePaper(paper)}
+                          >
+                            {savedPaperIds.has(paper.paperId || paper._id) ? (
+                              <BookmarkCheck className="w-4 h-4 text-primary" />
+                            ) : (
+                              <Bookmark className="w-4 h-4" />
+                            )}
+                          </Button>
+                          <a href={paper.url} target="_blank" rel="noopener noreferrer">
+                            <Button variant="ghost" size="sm">
+                              <ExternalLink className="w-4 h-4" />
+                            </Button>
+                          </a>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="ghost" size="sm" title="Rate this paper">
+                                {paper.feedback === 'like' && <ThumbsUp className="w-4 h-4 text-blue-500" fill="currentColor" />}
+                                {paper.feedback === 'dislike' && <ThumbsDown className="w-4 h-4 text-red-500" fill="currentColor" />}
+                                {paper.feedback === 'heart' && <Heart className="w-4 h-4 text-pink-500" fill="currentColor" />}
+                                {!paper.feedback && <ThumbsUp className="w-4 h-4 text-muted-foreground" />}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-1" align="end">
+                              <div className="flex gap-1">
+                                <Button variant="ghost" size="icon" onClick={() => handleFeedback(paper._id, paper.feedback === 'like' ? null : 'like')}>
+                                  <ThumbsUp className={`w-4 h-4 ${paper.feedback === 'like' ? 'text-blue-500' : 'text-muted-foreground'}`} fill={paper.feedback === 'like' ? 'currentColor' : 'none'} />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => handleFeedback(paper._id, paper.feedback === 'dislike' ? null : 'dislike')}>
+                                  <ThumbsDown className={`w-4 h-4 ${paper.feedback === 'dislike' ? 'text-red-500' : 'text-muted-foreground'}`} fill={paper.feedback === 'dislike' ? 'currentColor' : 'none'} />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => handleFeedback(paper._id, paper.feedback === 'heart' ? null : 'heart')}>
+                                  <Heart className={`w-4 h-4 ${paper.feedback === 'heart' ? 'text-pink-500' : 'text-muted-foreground'}`} fill={paper.feedback === 'heart' ? 'currentColor' : 'none'} />
+                                </Button>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      </div>
+                    </CardHeader>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        <>
+          <div>
+            <h2 className="mb-4">Featured Research Papers</h2>
+            {papers.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">No papers found for this issue.</div>
+            ) : (
+              <div className="space-y-6">
+                {papers.map((paper, index) => (
+                  <Card key={paper._id} className="shadow-sm hover:shadow-md transition-shadow">
+                    <CardHeader withSeparator={false}>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 mr-4">
+                          <CardTitle className="text-lg leading-snug mb-2 font-bold">
+                            {`${index + 1}. ${paper.title}`}
+                          </CardTitle>
+                          <div className="text-sm text-muted-foreground mb-2">
+                            <span>{paper.authors.join(", ")}</span>
+                            {paper.venueName && (
+                              <span className="ml-2 text-xs text-gray-500">({paper.venueName})</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span>{new Date(paper.publicationDate).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title={savedPaperIds.has(paper.paperId || paper._id) ? "Unsave paper" : "Save paper"}
+                            onClick={() => handleToggleSavePaper(paper)}
+                          >
+                            {savedPaperIds.has(paper.paperId || paper._id) ? (
+                              <BookmarkCheck className="w-4 h-4 text-primary" />
+                            ) : (
+                              <Bookmark className="w-4 h-4" />
+                            )}
+                          </Button>
+                          <a href={paper.url} target="_blank" rel="noopener noreferrer">
+                            <Button variant="ghost" size="sm">
+                              <ExternalLink className="w-4 h-4" />
+                            </Button>
+                          </a>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <h4 className="font-semibold">Synthesis</h4>
+                      <p className="text-base text-muted-foreground mb-2">
+                        {paper.synthesis}
+                      </p>
+                      <h4 className="font-semibold">Why it matters?</h4>
+                      <p className="text-base text-muted-foreground">
+                        {paper.usefulness}
+                      </p>
+                    </CardContent>
+                    <CardFooter className="flex justify-end gap-4">
+                      <Button variant="ghost" size="icon" onClick={() => handleFeedback(paper._id, paper.feedback === 'like' ? null : 'like')}>
+                        <ThumbsUp className={`w-5 h-5 ${paper.feedback === 'like' ? 'text-blue-500' : 'text-muted-foreground'}`} fill={paper.feedback === 'like' ? 'currentColor' : 'none'} />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleFeedback(paper._id, paper.feedback === 'dislike' ? null : 'dislike')}>
+                        <ThumbsDown className={`w-5 h-5 ${paper.feedback === 'dislike' ? 'text-red-500' : 'text-muted-foreground'}`} fill={paper.feedback === 'dislike' ? 'currentColor' : 'none'} />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleFeedback(paper._id, paper.feedback === 'heart' ? null : 'heart')}>
+                        <Heart className={`w-5 h-5 ${paper.feedback === 'heart' ? 'text-pink-500' : 'text-muted-foreground'}`} fill={paper.feedback === 'heart' ? 'currentColor' : 'none'} />
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="mt-8 bg-muted/30 rounded-lg p-4 shadow-sm">
+            <h3 className="mb-2">Conclusion</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              {issue.conclusion}
+            </p>
+          </div>
+        </>
+      )}
     </div>
   );
 }

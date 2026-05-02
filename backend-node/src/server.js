@@ -31,7 +31,7 @@ mongoose.connect(MONGODB_URI)
   .catch(err => console.error('MongoDB connection error:', err));
 
 // API Routes
-app.use('/api/public/issues', publicRoutes); // Public route for actions like marking as read from email
+app.use('/api/public', publicRoutes); // Public routes for email actions (mark-as-read, feedback, reactivate)
 
 app.use('/api/announcements', jwtCheck, announcementRoutes);
 app.use('/api/newsletters', jwtCheck, newsletterRoutes);

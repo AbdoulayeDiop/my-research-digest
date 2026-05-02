@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, FileText, Settings, CheckCircle2, XCircle } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { ArrowLeft, Settings, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { IssuesList } from "./IssuesList";
@@ -24,7 +23,7 @@ export function NewsletterPage() {
 
   const [newsletter, setNewsletter] = useState<Newsletter | null>(location.state?.newsletter);
   const [isLoading, setIsLoading] = useState(!location.state?.newsletter);
-  const [activeTab, setActiveTab] = useState(location.pathname.endsWith('/settings') ? 'settings' : 'issues');
+  const [showSettings, setShowSettings] = useState(location.pathname.endsWith('/settings'));
 
   useEffect(() => {
     if (!newsletter) {
@@ -74,11 +73,11 @@ export function NewsletterPage() {
           Back to Dashboard
         </Button>
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-3xl font-bold tracking-tight">{newsletter.topic}</h1>
-              <Badge 
+              <Badge
                 variant={newsletter.status === 'active' ? "default" : "secondary"}
                 className={newsletter.status === 'active' ? "bg-green-600 hover:bg-green-700" : ""}
               >
@@ -92,38 +91,26 @@ export function NewsletterPage() {
               </p>
             )}
           </div>
+          <Button
+            variant={showSettings ? "secondary" : "ghost"}
+            size="icon"
+            title={showSettings ? "Back to issues" : "Settings"}
+            onClick={() => setShowSettings(v => !v)}
+            className="shrink-0 mt-1"
+          >
+            {showSettings ? <ArrowLeft className="w-5 h-5" /> : <Settings className="w-5 h-5" />}
+          </Button>
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-muted/50 p-1.5 h-12 w-full md:w-auto grid grid-cols-2 md:inline-flex gap-2">
-          <TabsTrigger 
-            value="issues" 
-            className="gap-2 px-6 transition-all hover:bg-background/40 hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:border-primary/20"
-          >
-            <FileText className="w-4 h-4" />
-            Weekly issues
-          </TabsTrigger>
-          <TabsTrigger 
-            value="settings" 
-            className="gap-2 px-6 transition-all hover:bg-background/40 hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:border-primary/20"
-          >
-            <Settings className="w-4 h-4" />
-            Settings
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="issues" className="mt-0">
-          <IssuesList 
-            onViewIssue={(issue) => navigate(`/issues/${issue._id}`)}
-            showHeader={false}
-          />
-        </TabsContent>
-
-        <TabsContent value="settings" className="mt-0">
-          <NewsletterSettings />
-        </TabsContent>
-      </Tabs>
+      {showSettings ? (
+        <NewsletterSettings />
+      ) : (
+        <IssuesList
+          onViewIssue={(issue) => navigate(`/issues/${issue._id}`)}
+          showHeader={false}
+        />
+      )}
     </div>
   );
 }

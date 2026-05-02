@@ -62,11 +62,11 @@ export function HowItWorksSection() {
               <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <Mail className="w-8 h-8 text-primary" /> {/* Using Mail icon temporarily, can be changed */}
               </div>
-              <CardTitle>4. Smart Ranking & Summary</CardTitle>
+              <CardTitle>4. Your Digest, Delivered</CardTitle>
             </CardHeader>
             <CardContent>
               <CardDescription className="text-center">
-                Selected papers are ranked by author impact and then summarized by AI. Finally, a curated digest is delivered weekly to your inbox.
+                Selected papers are compiled into your digest and sent on your schedule (weekly, bi-weekly, or monthly). Choose between <strong>Classic</strong> — top papers with individual AI summaries — or <strong>State-of-the-Art</strong> — a single literature review grouping papers by theme and emerging trends.
               </CardDescription>
             </CardContent>
           </Card>

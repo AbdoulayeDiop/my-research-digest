@@ -42,7 +42,7 @@ export function BenefitsSection() {
                 <div>
                   <h3 className="font-semibold mb-2">Focused & Relevant</h3>
                   <p className="text-muted-foreground">
-                    Instead of an overwhelming list of papers, the AI selects the 5 most relevant and impactful studies each week for your review.
+                    Instead of an overwhelming list of papers, the AI filters and selects only the must-reads — then presents them as individual summaries or as a cohesive literature review.
                   </p>
                 </div>
               </div>
@@ -54,7 +54,7 @@ export function BenefitsSection() {
                 <div>
                   <h3 className="font-semibold mb-2">AI-Assisted Synthesis</h3>
                   <p className="text-muted-foreground">
-                    Each paper is analyzed and synthesized to provide you with clear summaries, key findings, and research implications.
+                    Each issue is either individually summarized (synthesis + why it matters per paper) or synthesized as a whole into a thematic literature review highlighting trends, methods, and tensions across the selected papers.
                   </p>
                 </div>
               </div>

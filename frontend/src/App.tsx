@@ -17,10 +17,11 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Toaster } from "sonner";
 
 interface User {
-  _id: string; // MongoDB user ID
-  sub?: string; // Auth0 user ID
+  _id: string;
+  sub?: string;
   name?: string;
   email?: string;
+  role?: 'user' | 'admin';
 }
 
 function AppContent() {

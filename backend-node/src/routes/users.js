@@ -22,6 +22,9 @@ router.post('/save-paper', userController.savePaper);
 router.get('/saved-papers', userController.getSavedPapers);
 router.delete('/saved-papers/:paperId', userController.unsavePaper);
 
+// Get user by Auth0 ID (used by Python backend)
+router.get('/by-auth0/:auth0Id', userController.getUserByAuth0Id);
+
 // Get user by ID
 router.get('/:userId', userController.getUserById);
 

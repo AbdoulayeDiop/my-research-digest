@@ -18,3 +18,7 @@ class NewsletterWriterOutput(BaseModel):
     title: str = Field(..., description="A catchy and relevant title for the newsletter.")
     introduction: str = Field(..., description="A brief introduction for the newsletter.")
     conclusion: str = Field(..., description="A conclusion for the newsletter, summarizing key takeaways and identifying potential future trends.")
+
+class SotANewsletterOutput(BaseModel):
+    title: str = Field(..., description="A concise, descriptive title for the review.")
+    content_markdown: str = Field(..., description="Full state-of-the-art review in Markdown with inline [Title](url) citations.")
