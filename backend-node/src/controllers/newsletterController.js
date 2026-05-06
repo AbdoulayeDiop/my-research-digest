@@ -190,10 +190,19 @@ exports.getNewsletterById = async (req, res) => {
 exports.updateNewsletter = async (req, res) => {
   try {
     const { description, status, rankingStrategy, frequency, issueFormat, queries, lastSearch, filters, inactivityWarningSentAt } = req.body;
+    const update = { description, status, rankingStrategy, frequency, issueFormat, queries, lastSearch, filters, inactivityWarningSentAt };
+
+    if (status === 'active') {
+      const current = await Newsletter.findById(req.params.id, 'status');
+      if (current && current.status === 'inactive') {
+        update.reactivatedAt = new Date();
+      }
+    }
+
     const updatedNewsletter = await Newsletter.findByIdAndUpdate(
       req.params.id,
-      { description, status, rankingStrategy, frequency, issueFormat, queries, lastSearch, filters, inactivityWarningSentAt },
-      { new: true } // Return the updated document
+      update,
+      { new: true }
     );
     if (!updatedNewsletter) {
       return res.status(404).json({ message: 'Newsletter not found' });

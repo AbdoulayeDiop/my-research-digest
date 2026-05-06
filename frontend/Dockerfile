@@ -1,5 +1,5 @@
 # Use an official Node.js runtime as a parent image
-FROM node:22-alpine as build
+FROM node:22-alpine AS build
 
 ARG VITE_AUTH0_DOMAIN
 ARG VITE_AUTH0_CLIENT_ID

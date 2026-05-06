@@ -49,6 +49,9 @@ const NewsletterSchema = new mongoose.Schema({
   inactivityWarningSentAt: {
     type: Date,
   },
+  reactivatedAt: {
+    type: Date,
+  },
   filters: {
     venues: {
       type: [String],

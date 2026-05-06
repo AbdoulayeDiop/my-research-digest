@@ -205,9 +205,15 @@ exports.getConsecutiveUnreadCount = async (req, res) => {
   try {
     const { newsletterId, userId } = req.params;
 
-    const issues = await Issue.find({ newsletterId })
+    const newsletter = await Newsletter.findById(newsletterId, 'reactivatedAt');
+    const issueQuery = { newsletterId };
+    if (newsletter?.reactivatedAt) {
+      issueQuery.publicationDate = { $gte: newsletter.reactivatedAt };
+    }
+
+    const issues = await Issue.find(issueQuery)
       .sort({ publicationDate: -1 })
-      .limit(4);
+      .limit(5);
 
     let count = 0;
     for (const issue of issues) {

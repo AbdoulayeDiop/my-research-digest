@@ -67,7 +67,7 @@ exports.reactivateNewsletterFromEmail = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.redirect(`${appDomain}/status/error`);
 
-    await Newsletter.findByIdAndUpdate(newsletterId, { status: 'active', inactivityWarningSentAt: null });
+    await Newsletter.findByIdAndUpdate(newsletterId, { status: 'active', inactivityWarningSentAt: null, reactivatedAt: new Date() });
     return res.redirect(`${appDomain}/status/reactivated`);
 
   } catch (error) {
