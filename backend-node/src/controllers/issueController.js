@@ -24,6 +24,7 @@ exports.createIssue = async (req, res) => {
       introduction,
       conclusion,
       contentMarkdown,
+      issueFormat: newsletter.issueFormat ?? 'classic',
       status,
     });
     await newIssue.save();

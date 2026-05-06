@@ -27,7 +27,11 @@ const IssueSchema = new mongoose.Schema({
   contentMarkdown: {
     type: String,
   },
-  
+  issueFormat: {
+    type: String,
+    enum: ['classic', 'state_of_the_art'],
+    default: 'classic',
+  },
   status: {
     type: String,
     enum: ['published', 'draft'],

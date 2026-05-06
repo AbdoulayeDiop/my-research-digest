@@ -20,6 +20,7 @@ interface Issue {
   papers: string[];
   status: "published" | "draft";
   newsletterId: string;
+  issueFormat?: 'classic' | 'state_of_the_art';
   read: boolean;
 }
 
@@ -231,7 +232,7 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
             </div>
           </div>
 
-          {newsletter?.issueFormat !== 'state_of_the_art' && issue.introduction && (
+          {issue.issueFormat !== 'state_of_the_art' && issue.introduction && (
             <div className="bg-muted/30 rounded-lg p-4 mt-8 shadow-sm">
               <h3 className="mb-2">Introduction</h3>
               <p className="text-muted-foreground leading-relaxed">
@@ -242,7 +243,7 @@ export function IssueDetail({ onBack }: IssueDetailProps) {
         </div>
       </div>
 
-      {newsletter?.issueFormat === 'state_of_the_art' ? (
+      {issue.issueFormat === 'state_of_the_art' ? (
         <>
           <div className="mb-8 leading-relaxed">
             <ReactMarkdown
