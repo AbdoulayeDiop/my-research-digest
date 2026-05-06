@@ -1,5 +1,5 @@
 # Use an official Node.js runtime as a parent image
-FROM node:25-alpine as build
+FROM node:22-alpine as build
 
 ARG VITE_AUTH0_DOMAIN
 ARG VITE_AUTH0_CLIENT_ID
@@ -24,7 +24,7 @@ COPY . .
 RUN npm run build
 
 # Use a lightweight Nginx image to serve the built app
-FROM nginx:alpine
+FROM nginx:1.26-alpine
 
 # Copy the build output from the build stage to the Nginx html directory
 COPY --from=build /app/dist /usr/share/nginx/html

@@ -1,6 +1,6 @@
 services:
   nginx:
-    image: nginx:latest
+    image: nginx:1.26-alpine
     container_name: my-research-digest-nginx
     ports:
       - "80:80"
@@ -59,7 +59,7 @@ services:
     restart: unless-stopped
 
   mongodb:
-    image: mongo:latest
+    image: mongo:7.0
     container_name: my-research-digest-mongodb
     expose:
       - "27017"
