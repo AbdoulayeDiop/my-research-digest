@@ -60,7 +60,7 @@ const PUBLICATION_TYPES = [
   'BookSection'
 ];
 
-export function NewsletterSettings() {
+export function NewsletterSettings({ onSave }: { onSave?: () => void }) {
   const { newsletterId } = useParams<{ newsletterId: string }>();
   const navigate = useNavigate();
   
@@ -122,6 +122,7 @@ export function NewsletterSettings() {
         filters: newsletter.filters,
       });
       toast.success("Settings saved successfully!");
+      onSave?.();
     } catch (error) {
       console.error("Error saving newsletter:", error);
       toast.error("Failed to save settings.");

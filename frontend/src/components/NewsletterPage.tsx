@@ -103,7 +103,7 @@ export function NewsletterPage() {
       </div>
 
       {showSettings ? (
-        <NewsletterSettings />
+        <NewsletterSettings onSave={fetchNewsletter} />
       ) : (
         <IssuesList
           onViewIssue={(issue) => navigate(`/issues/${issue._id}`)}
