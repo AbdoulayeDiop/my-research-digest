@@ -258,6 +258,30 @@ export function NewsletterSettings() {
               </Alert>
             </div>
 
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label className="text-base">Digest Format</Label>
+                <p className="text-sm text-muted-foreground">How should your digest be structured?</p>
+              </div>
+              <Select
+                value={newsletter.issueFormat}
+                onValueChange={(value: 'classic' | 'state_of_the_art') => setNewsletter({ ...newsletter, issueFormat: value })}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select format" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="state_of_the_art">
+                    <span className="flex items-center gap-2">
+                      State of the Art — thematic literature review
+                      <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400">Beta</Badge>
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="classic">Classic — top papers with individual summaries</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {newsletter.issueFormat === 'classic' && (
             <div className="space-y-3">
               <div className="space-y-1">
@@ -304,25 +328,6 @@ export function NewsletterSettings() {
               </Select>
             </div>
 
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <Label className="text-base">Digest Format</Label>
-                <p className="text-sm text-muted-foreground">How should your digest be structured?</p>
-              </div>
-              <Select
-                value={newsletter.issueFormat}
-                onValueChange={(value: 'classic' | 'state_of_the_art') => setNewsletter({ ...newsletter, issueFormat: value })}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select format" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="state_of_the_art">State of the Art — thematic literature review</SelectItem>
-                  <SelectItem value="classic">Classic — top papers with individual summaries</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div className="space-y-0.5">
                 <Label className="text-base">
@@ -335,9 +340,8 @@ export function NewsletterSettings() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Badge 
-                  variant={newsletter.status === 'active' ? "default" : "secondary"}
-                  className={newsletter.status === 'active' ? "bg-green-600 hover:bg-green-700" : ""}
+                <Badge
+                  variant={newsletter.status === 'active' ? "success" : "secondary"}
                 >
                   {newsletter.status === 'active' ? <CheckCircle2 className="w-3 h-3 mr-1" /> : <XCircle className="w-3 h-3 mr-1" />}
                   {newsletter.status.toUpperCase()}

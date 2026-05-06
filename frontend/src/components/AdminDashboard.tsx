@@ -603,8 +603,7 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
                     <TableCell className="font-medium">{newsletter.topic}</TableCell>
                     <TableCell>
                       <Badge
-                        variant={newsletter.status === "active" ? "default" : "secondary"}
-                        className={newsletter.status === "active" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-0" : ""}
+                        variant={newsletter.status === "active" ? "success" : "secondary"}
                       >
                         {newsletter.status}
                       </Badge>

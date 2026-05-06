@@ -66,7 +66,7 @@ export function HowItWorksSection() {
             </CardHeader>
             <CardContent>
               <CardDescription className="text-center">
-                Selected papers are compiled into your digest and sent on your schedule (weekly, bi-weekly, or monthly). Choose between <strong>Classic</strong> — top papers with individual AI summaries — or <strong>State-of-the-Art</strong> — a single literature review grouping papers by theme and emerging trends.
+                Selected papers are compiled into an AI-generated digest and delivered to your inbox on your chosen schedule — weekly, bi-weekly, or monthly.
               </CardDescription>
             </CardContent>
           </Card>

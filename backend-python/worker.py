@@ -136,8 +136,8 @@ async def check_newsletter_inactivity(api_client, newsletter):
                 <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
                     <p>Dear {user_name},</p>
                     <p>The last 4 issues of your newsletter on <strong>{topic}</strong> have gone unread. To avoid generating content you don't need and to keep API costs in check, we'll automatically pause it after the next issue.</p>
-                    <p>If you'd like to keep receiving it, simply open one of your recent issues — that's all it takes to reset the counter. And if you've been reading from your inbox, don't forget to click the <strong>Mark as Read</strong> button in the email; that's how we track which newsletters are still active.</p>
-                    <p>If you no longer need this newsletter, you can delete it from your settings — no action needed to pause it.</p>
+                    <p>If you've been reading from your inbox, don't forget to click the <strong>Mark as Read</strong> button in the email; that's how we track which newsletters are still active.</p>
+                    <p>If you no longer need this newsletter, you can delete it from your settings.</p>
                     <p>Best regards,<br>The My Research Digest Team</p>
                 </div>
             """
@@ -203,7 +203,7 @@ async def process_newsletter(api_client, newsletter, state=None):
     queries = newsletter.get('queries', [])
     ranking_strategy = newsletter.get('rankingStrategy', 'author_based')
     filters = newsletter.get('filters', {})
-    issue_format = newsletter.get('issueFormat', 'state_of_the_art')
+    issue_format = newsletter.get('issueFormat', 'classic')
     nb_papers = 10 if issue_format == 'state_of_the_art' else 5
 
     result = await NewsletterCreator(api_client=api_client).create_newsletter(

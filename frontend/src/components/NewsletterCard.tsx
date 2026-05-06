@@ -50,9 +50,8 @@ export function NewsletterCard({ newsletter, onView }: NewsletterCardProps) {
           {newsletter.topic}
         </CardTitle>
         <CardAction>
-          <Badge 
-            variant={newsletter.status === 'active' ? "default" : "secondary"}
-            className={newsletter.status === 'active' ? "bg-green-600/10 text-green-600 hover:bg-green-600/20 border-green-600/20" : ""}
+          <Badge
+            variant={newsletter.status === 'active' ? "success" : "secondary"}
           >
             {newsletter.status}
           </Badge>

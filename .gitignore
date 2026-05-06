@@ -44,3 +44,4 @@ dist/
 google_oauth_client
 nginx.conf
 certbot/
+.claude

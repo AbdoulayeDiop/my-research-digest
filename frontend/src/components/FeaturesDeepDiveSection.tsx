@@ -46,13 +46,13 @@ export function FeaturesDeepDiveSection() {
           <Card className="border-0 bg-card/50 backdrop-blur">
             <CardHeader className="text-center pb-4" withSeparator={false}>
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <LayoutTemplate className="w-6 h-6 text-primary" />
+                <Users className="w-6 h-6 text-primary" />
               </div>
-              <CardTitle>Two Digest Formats</CardTitle>
+              <CardTitle>AI-Powered Relevance Filtering</CardTitle>
             </CardHeader>
             <CardContent>
               <CardDescription className="text-center">
-                Classic delivers top-ranked papers with individual AI summaries. State-of-the-Art produces a single literature review — grouping papers by theme, highlighting emerging methods, and flagging tensions across the field.
+                An LLM acts as an expert screener, analyzing each paper to ensure it is a "must-read" for your specific topic, guaranteeing high relevance.
               </CardDescription>
             </CardContent>
           </Card>
@@ -88,13 +88,13 @@ export function FeaturesDeepDiveSection() {
           <Card className="border-0 bg-card/50 backdrop-blur">
             <CardHeader className="text-center pb-4" withSeparator={false}>
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Users className="w-6 h-6 text-primary" />
+                <LayoutTemplate className="w-6 h-6 text-primary" />
               </div>
-              <CardTitle>AI-Powered Relevance Filtering</CardTitle>
+              <CardTitle>Flexible Digest Format</CardTitle>
             </CardHeader>
             <CardContent>
               <CardDescription className="text-center">
-                An LLM acts as an expert screener, analyzing each paper to ensure it is a "must-read" for your specific topic, guaranteeing high relevance.
+                Choose how your digest is structured — from individual paper summaries to a full thematic literature review that groups findings by topic and highlights emerging trends.
               </CardDescription>
             </CardContent>
           </Card>

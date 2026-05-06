@@ -78,8 +78,7 @@ export function NewsletterPage() {
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-3xl font-bold tracking-tight">{newsletter.topic}</h1>
               <Badge
-                variant={newsletter.status === 'active' ? "default" : "secondary"}
-                className={newsletter.status === 'active' ? "bg-green-600 hover:bg-green-700" : ""}
+                variant={newsletter.status === 'active' ? "success" : "secondary"}
               >
                 {newsletter.status === 'active' ? <CheckCircle2 className="w-3 h-3 mr-1" /> : <XCircle className="w-3 h-3 mr-1" />}
                 {newsletter.status.toUpperCase()}

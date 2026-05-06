@@ -40,7 +40,7 @@ const NewsletterSchema = new mongoose.Schema({
   issueFormat: {
     type: String,
     enum: ['classic', 'state_of_the_art'],
-    default: 'state_of_the_art'
+    default: 'classic'
   },
   queries: {
     type: [String],

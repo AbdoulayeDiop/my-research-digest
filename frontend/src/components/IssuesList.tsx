@@ -178,7 +178,7 @@ export function IssuesList({ onViewIssue, showHeader = true }: IssuesListProps) 
                             </div>
                           </div>
                           <div className="flex flex-col items-end gap-2">
-                            {index === 0 && <Badge className="bg-green-500/10 border-green-500/5 text-green-500">New</Badge>}
+                            {index === 0 && <Badge variant="success">New</Badge>}
                             <Tooltip>
                               <TooltipTrigger>
                                 <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleToggleRead(issue._id); }}>
