@@ -9,7 +9,33 @@ import re
 from openai import OpenAI, AsyncOpenAI
 import time
 
-def generate_queries(topic: str, description: str, model: str="gpt-5-mini") -> List[str]:
+MAX_AUTHORS = 6
+
+
+def _format_paper(i: int, p: Dict) -> str:
+    names = [a.get("name") or "" for a in (p.get("authors") or [])]
+    names = [n for n in names if n]
+    if not names:
+        authors = "authors not listed"
+    elif len(names) > MAX_AUTHORS:
+        authors = ", ".join(names[:MAX_AUTHORS]) + " et al."
+    else:
+        authors = ", ".join(names)
+
+    date = p.get("publicationDate") or p.get("year") or "date unknown"
+    venue = p.get("venue") or "venue not listed"
+    url = p.get("url") or ""
+    abstract = (p.get("abstract") or "").strip() or "[no abstract available]"
+
+    return (
+        f'{i}. "{p.get("title") or "[untitled]"}"\n'
+        f'   Authors: {authors}\n'
+        f'   Date: {date} | Venue: {venue}\n'
+        f'   URL: {url}\n'
+        f'   Abstract: {abstract}\n\n'
+    )
+
+def generate_queries(topic: str, description: str, model: str="gpt-5.6-terra") -> List[str]:
     client = OpenAI()
     response = client.responses.parse(
         model=model,
@@ -42,7 +68,7 @@ def get_paper_score(paper: Dict) -> float:
 
 
 class NewsletterCreator:
-    def __init__(self, model: str = "gpt-5-mini", embedding_model="text-embedding-3-large", temperature: float = 0, api_client=None):
+    def __init__(self, model: str = "gpt-5.6-luna", embedding_model="text-embedding-3-large", temperature: float = 0, api_client=None):
         self.model = model
         self.embedding_model = embedding_model
         self.temperature = temperature
@@ -52,7 +78,7 @@ class NewsletterCreator:
     def search(self, topic, description, start_date, end_date=None, max_papers: int = 10, queries=None, filters=None, newsletter_id=None, search_engine="semantic_scholar"):
         if not queries or len(queries) == 0:
             print("No stored queries found. Generating search queries...")
-            queries = generate_queries(topic, description, model=self.model)
+            queries = generate_queries(topic, description)
             print("Search queries generated:", queries)
             # Update the newsletter with the generated queries if api_client and newsletter_id are provided
             if self.api_client and newsletter_id:
@@ -146,6 +172,7 @@ class NewsletterCreator:
                     title=paper['title'],
                     abstract=paper['abstract']
                 ),
+                reasoning={"effort": "high"},
                 text_format=RelevanceOutput
             )
             parsed_response: RelevanceOutput = response.output_parsed
@@ -178,19 +205,16 @@ class NewsletterCreator:
         return results
 
     def write_sota_newsletter(self, topic: str, papers: List[Dict], description: str = "") -> Dict:
-        papers_list = ""
-        for i, p in enumerate(papers, 1):
-            authors = ", ".join(a.get("name", "") for a in p.get("authors", []))
-            papers_list += f'{i}. "{p["title"]}" by {authors} ({p.get("url", "")})\nAbstract: {p.get("abstract", "")}\n\n'
+        papers_list = "".join(_format_paper(i, p) for i, p in enumerate(papers, 1))
 
         response = self.client.responses.parse(
-            model="gpt-5.4-mini",
+            model="gpt-5.6-terra",
             input=prompts.sota_newsletter_prompt.format(
                 topic=topic,
                 description=description,
                 papers_list=papers_list
             ),
-            reasoning={"effort": "medium"},
+            reasoning={"effort": "high"},
             text_format=SotANewsletterOutput
         )
         parsed: SotANewsletterOutput = response.output_parsed
