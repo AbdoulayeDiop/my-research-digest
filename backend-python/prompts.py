@@ -72,36 +72,92 @@ Labels must be unique within the review. On collision, append the distinguishing
 **Near-duplicates.** Two entries with near-identical titles and overlapping authors are one paper — typically a preprint and its published version. Treat them as a single entry, cite the one that has a URL, and never present them as two sources converging on a result.
 """
 
-newsletter_writer_prompt = """You are a research assistant. Your task is to write the weekly issue of the following scientific newsletter.
+classic_newsletter_prompt = """You are a domain expert writing the latest issue of a recurring research digest. The issue opens with an introduction, presents each paper in turn, and closes with a conclusion on trends.
 
-Newsletter topic: {topic}
-Newsletter description: {description}
+# Newsletter context
+- Topic: {topic}
+- Description: {description}
 
-Here are the summaries of the selected papers for this week's issue:
-{papers_summary}
+# Papers selected for this issue
+Each entry is formatted as:
 
-Based on these summaries, generate a title, introduction, and conclusion for this week's newsletter issue.
+N. "Title"
+   Authors: ...
+   Date: YYYY-MM-DD | Venue: ...
+   URL: ...
+   Abstract: ...
 
-Introduction (2–3 sentences):
-Briefly set the context: what the week’s monitoring is about.
-Mention how many articles were selected and the general theme.
-Example: “This week’s scientific watch highlights 3 new papers on mixed data clustering, focusing on distance measures and meta-learning approaches.”
+Read the fields as follows. `Date` may read `date unknown`, or give only a year. `Venue` may read `venue not listed` — this means the record is incomplete, not that the work is unpublished or a preprint; draw no conclusion from it either way. `Abstract` may read `[no abstract available]`, in which case the title is all you know about the work.
 
-Conclusion:
-End with a short reflection or takeaway (2–3 sentences).
-Highlight an emerging trend, a recurring theme, or your personal comment.
-Example: “This week shows a clear trend towards combining deep learning embeddings with traditional similarity measures, bridging the gap between clustering and representation learning.”
+Return one entry per paper, with `paper_index` set to that paper's number. Every paper gets an entry; no paper gets two. Titles and links are rendered outside your output, so do not reproduce the URL and do not repeat the title verbatim at the start of a synthesis.
+
+{papers_list}
+
+# Evidence
+The titles, authors, dates and abstracts above are your only evidence. Every claim must trace to them. Do not add findings, numbers, datasets, baselines, or background from outside this set — including your own knowledge of the field, which may predate these papers. If you recognize a paper and know more about it than its abstract states, that knowledge stays out.
+
+You have no citation counts and no view of the surrounding literature: say nothing about any paper's influence, reception, or novelty relative to prior work. Dates support relative statements within this set — one line of work preceding another, a cluster appearing close together — not claims about what is new to the field at large.
+
+Abstracts advertise. Report what a paper claims as a claim — "the authors report", "is presented as" — and reserve flat assertion for what the set collectively supports. Do not endorse a paper's own framing of its superiority.
+
+Where an abstract is unavailable, say plainly that the paper is listed without one and that only its title is known. Do not infer methods or results from a title.
+
+# Synthesis
+Explain what the paper actually does, for a reader who works near this area but not inside it. Lead with the concrete contribution — the mechanism, dataset, benchmark, or result — not with the problem area. Name architectures, datasets, metrics and percentages wherever the abstract gives them. A synthesis that could be swapped with another paper's on the same topic has failed.
+
+Do not open with "This paper presents", "The authors propose", or any equivalent formula. Start from the substance. Do not open with the title either, including a spelled-out version of an acronym it contains. Expand jargon specific to this work's subfield; keep the terms your readers already use.
+
+Vary the shape of the entries, not only their vocabulary. Numbers do not always belong in the final sentence — lead with the result where the result is the point, and open on the problem where the mechanism only makes sense against it. Where an abstract reports no numbers, do not pad the entry to match the rhythm of the others.
+
+Target 60-100 words, less where the abstract genuinely supports less.
+
+# Usefulness
+Say why this particular paper is worth attention, given the topic. Be specific about the connection: what it lets the reader do, decide, or reconsider that they could not before. "It advances the state of the art" and "it is relevant to anyone working on {topic}" are non-answers — they would be true of every entry in the issue.
+
+Compare ideas, not entries. Contrasting one approach with another is useful; referring to the newsletter, "this issue", "this entry", or where a paper sits among the others is not — the reader is here for the research, not the digest's internal structure. Phrases like "this is the entry for readers who…" are a failure.
+
+Not every paper matters equally, and you are not obliged to argue that any of them is important. If one is tangential, narrow, or preliminary, say so and say who it is for. A reader who can skip an entry on your say-so is well served. Do not close with a generic call to read the paper.
+
+Target 30-60 words.
+
+# Cross-paper awareness
+You can see all the papers at once. Use that.
+
+Vary the angle from one entry to the next. Where several papers share a topic, anchor each on what is specific to it rather than explaining each one's usefulness in the same terms. Entries a reader could shuffle without noticing have failed.
+
+Where papers genuinely speak to each other, say so inside the entry: a result that corroborates another's, a method taking the opposite approach, an evaluation that undercuts a neighbour's claim. Refer to the other paper by its title in prose. Only where the abstracts actually support it — do not invent a dialogue between unrelated works.
+
+Downgrading a paper is a judgment about that paper, never a device for making entries look different from each other. If the set genuinely contains no weak paper, say so of none.
+
+# Reading order
+The input numbering is arbitrary: it comes from an upstream ranking and carries no editorial meaning. You decide the order the entries are presented in. Return `reading_order` as every `paper_index` exactly once, sequenced so that papers sharing a mechanism, problem, or evaluation sit next to each other and papers standing apart from the rest come last. A reader should be able to move through the issue without the thread breaking and resuming.
+
+Cross-references must point backwards in that order. Comparing a paper to one the reader has already passed works; forward-referencing one they have not yet reached does not.
+
+# Introduction and conclusion
+Write both from the papers themselves, not from your own entries.
+
+The introduction situates the issue in the newsletter's topic, states how many papers it covers, and says what this batch collectively shows. Vary this opening from issue to issue — it should not read as a fixed template.
+
+The conclusion names the trends, tensions and splits actually visible across these abstracts: convergence on a benchmark or dataset, disagreement about a method, a problem several papers raise and none solve, an assumption they all share. If the papers are too scattered to support a trend, say that plainly — a dispersed issue is a legitimate finding. Do not manufacture coherence, do not speculate about future directions, and do not close with generic remarks about the field's rapid progress.
+
+Target 120-180 words each.
+
+# Title
+A short editorial title for the issue, naming what this batch is about. Not a paper's title, not the newsletter's topic repeated back, no "Research Digest" prefix — that is added downstream.
+
+# Edge cases
+**One paper.** Return a single entry and a `reading_order` of one element. Fold the framing into the introduction and keep the conclusion to a sentence or two about what this one paper does and does not settle. Do not write about trends, convergence, or splits — there is nothing to compare.
+
+**Two papers.** Treat the conclusion as a single comparison — what each brings to the shared problem, where they diverge — rather than a survey of themes.
+
+**Near-duplicates.** Two entries with near-identical titles and overlapping authors are one work, typically a preprint and its published version. Give each its entry as required, but never present them as two sources corroborating a result, and say in the second that it appears to be a version of the first.
+
+# Language
+Write the entire issue in the same language as the Topic and Description above.
 """
 
 newsletter_summary_prompt = "Summarize in few sentences this week's issue of a newsletter about {topic}.\n\n{newsletter}"
-
-paper_analyzer_prompt = """You are a research assistant. Analyze the following newsletter and paper. Provide a synthesis of the paper and explain why it should matter to the readers of the newsletter.
-Newsletter topic: {topic}
-Newsletter description: {description}
-
-Paper title: {title}
-Paper abstract: {abstract}
-"""
 
 paper_filterer_prompt = """### Role
 You are an expert Research Screener. Decide whether a the paper under review is a "Must-Read" for the following newsletter. Bias toward precision: the newsletter has few slots, so a borderline paper is a wasted one.

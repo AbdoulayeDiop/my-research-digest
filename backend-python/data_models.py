@@ -13,14 +13,17 @@ class RelevanceOutput(BaseModel):
                     "or does not fall inside the newsletter's scope."
     )
 
-class PaperAnalyzerOutput(BaseModel):
-    synthesis: str = Field(..., description="A brief synthesis of the paper. Explain the paper’s contribution in simple terms. (2–4 sentences)")
-    usefulness: str = Field(..., description="Explain why the paper matters, particularly given the newsletter topic / why should the reader should read it? (1–3 sentences)")
+class PaperEntry(BaseModel):
+    paper_index: int = Field(..., description="1-based index of the paper as numbered in the input list")
+    synthesis: str = Field(..., description="What the paper does, concretely")
+    usefulness: str = Field(..., description="Why this specific paper is worth the reader's attention")
 
-class NewsletterWriterOutput(BaseModel):
-    title: str = Field(..., description="A concise, descriptive title for the review.")
-    introduction: str = Field(..., description="A brief introduction for the newsletter.")
-    conclusion: str = Field(..., description="A conclusion for the newsletter, summarizing key takeaways and identifying potential future trends.")
+class ClassicNewsletterOutput(BaseModel):
+    title: str = Field(..., description="Short editorial title for this issue. Not a paper title, no 'Research Digest' prefix.")
+    introduction: str = Field(..., description="Frames what this batch collectively shows")
+    entries: List[PaperEntry] = Field(..., description="Exactly one entry per input paper")
+    reading_order: List[int] = Field(..., description="Every paper_index exactly once, in the order the entries should be presented: related papers adjacent, outliers last")
+    conclusion: str = Field(..., description="Trends, tensions and splits visible across these papers")
 
 class SotANewsletterOutput(BaseModel):
     title: str = Field(..., description="A concise, descriptive title for the review.")

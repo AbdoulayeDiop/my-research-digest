@@ -1,5 +1,5 @@
 import prompts
-from data_models import RelevanceOutput, QueryGeneratorOutput, PaperAnalyzerOutput, NewsletterWriterOutput, SotANewsletterOutput
+from data_models import RelevanceOutput, QueryGeneratorOutput, SotANewsletterOutput, ClassicNewsletterOutput
 from paper_search import SemanticSearch, OpenAlexSearch
 import asyncio
 from typing import List, Dict, Optional
@@ -43,7 +43,8 @@ def generate_queries(topic: str, description: str, model: str="gpt-5.6-terra") -
             topic=topic,
             description=description
         ),
-        text_format=QueryGeneratorOutput
+        text_format=QueryGeneratorOutput,
+        reasoning={"effort": "medium"}
     )
     parsed_response: QueryGeneratorOutput = response.output_parsed
     return parsed_response.queries
@@ -68,8 +69,9 @@ def get_paper_score(paper: Dict) -> float:
 
 
 class NewsletterCreator:
-    def __init__(self, model: str = "gpt-5.6-luna", embedding_model="text-embedding-3-large", temperature: float = 0, api_client=None):
+    def __init__(self, model: str = "gpt-5.6-luna", writer_model: str = "gpt-5.6-luna", embedding_model="text-embedding-3-large", temperature: float = 0, api_client=None):
         self.model = model
+        self.writer_model = writer_model
         self.embedding_model = embedding_model
         self.temperature = temperature
         self.client = OpenAI()
@@ -150,10 +152,9 @@ class NewsletterCreator:
 
                         papers = sorted(papers, key=lambda p: p["score"], reverse=True)[:nb_papers]
 
-                    print(f"Analyzing {len(papers)} papers...")
-                    analyzes = await self.analyze_papers(topic, papers, description=description)
-                    papers_with_analysis = [{"paper": paper, "analysis": analysis.model_dump()} for paper, analysis in zip(papers, analyzes)]
-                    newsletter = self.write_newsletter(topic, papers_with_analysis, description=description)
+                    print(f"Writing issue for {len(papers)} papers...")
+                    newsletter, papers_with_analysis = self.write_newsletter(
+                        topic, papers, description=description)
 
                 return {'newsletter': newsletter, 'papers': papers_with_analysis}
         return None
@@ -172,7 +173,7 @@ class NewsletterCreator:
                     title=paper['title'],
                     abstract=paper['abstract']
                 ),
-                reasoning={"effort": "high"},
+                reasoning={"effort": "medium"},
                 text_format=RelevanceOutput
             )
             parsed_response: RelevanceOutput = response.output_parsed
@@ -184,31 +185,11 @@ class NewsletterCreator:
             papers, results) if is_relevant == "yes"]
         return filtered_papers
 
-    async def analyze_papers(self, topic: str, papers: List[Dict], description: str="") -> List[PaperAnalyzerOutput]:
-        async def do_analysis(paper):
-            response = await asyncio.to_thread(
-                self.client.responses.parse,
-                model=self.model,
-                input=prompts.paper_analyzer_prompt.format(
-                    topic=topic,
-                    description=description,
-                    title=paper['title'],
-                    abstract=paper['abstract']
-                ),
-                text_format=PaperAnalyzerOutput
-            )
-            parsed_response: PaperAnalyzerOutput = response.output_parsed
-            return parsed_response
-
-        tasks = [do_analysis(paper) for paper in papers]
-        results = await asyncio.gather(*tasks)
-        return results
-
     def write_sota_newsletter(self, topic: str, papers: List[Dict], description: str = "") -> Dict:
         papers_list = "".join(_format_paper(i, p) for i, p in enumerate(papers, 1))
 
         response = self.client.responses.parse(
-            model="gpt-5.6-terra",
+            model=self.writer_model,
             input=prompts.sota_newsletter_prompt.format(
                 topic=topic,
                 description=description,
@@ -237,62 +218,79 @@ class NewsletterCreator:
             'is_sota': True,
         }
 
-    def write_newsletter(self, topic, papers_with_analysis: List[Dict], description: str="") -> Dict:
-        papers_summary = ""
-        for item in papers_with_analysis:
-            papers_summary += f"- {item['paper']['title']}: {item['analysis']['synthesis']}\n"
+    def write_newsletter(self, topic: str, papers: List[Dict], description: str = "") -> tuple:
+        papers_list = "".join(_format_paper(i, p) for i, p in enumerate(papers, 1))
 
         response = self.client.responses.parse(
-            model=self.model,
-            input=prompts.newsletter_writer_prompt.format(
+            model=self.writer_model,
+            input=prompts.classic_newsletter_prompt.format(
                 topic=topic,
                 description=description,
-                papers_summary=papers_summary
+                papers_list=papers_list
             ),
-            text_format=NewsletterWriterOutput
+            reasoning={"effort": "high"},
+            text_format=ClassicNewsletterOutput
         )
-        parsed_response: NewsletterWriterOutput = response.output_parsed
-        title = parsed_response.title
-        introduction = parsed_response.introduction
-        conclusion = parsed_response.conclusion
+        parsed: ClassicNewsletterOutput = response.output_parsed
 
-        # Format Papers Selection
+        # Map entries back to papers by index; never trust emission order.
+        by_index = {}
+        for e in parsed.entries:
+            if 1 <= e.paper_index <= len(papers) and e.paper_index not in by_index:
+                by_index[e.paper_index] = e
+            else:
+                print(f"Discarding entry with invalid/duplicate index {e.paper_index}")
+
+        missing = [i for i in range(1, len(papers) + 1) if i not in by_index]
+        if missing:
+            print(f"Warning: no entry returned for papers {missing}")
+
+        # Presentation order: use the model's sequencing only if it is a clean
+        # permutation of the entries we actually have.
+        order = [i for i in parsed.reading_order if i in by_index]
+        if sorted(order) != sorted(by_index.keys()):
+            print("Invalid reading_order; falling back to input order")
+            order = sorted(by_index.keys())
+
+        papers_with_analysis = []
+        for i in order:
+            e = by_index[i]
+            papers_with_analysis.append({
+                "paper": papers[i - 1],
+                "analysis": {"synthesis": e.synthesis, "usefulness": e.usefulness},
+            })
+
         papers_section = "## 📝 Papers Selection\n\n"
         for item in papers_with_analysis:
-            paper = item['paper']
-            analysis = item['analysis']
+            paper, analysis = item["paper"], item["analysis"]
             papers_section += f"### {paper.get('title', 'No Title')}\n\n"
-            papers_section += f"**Synthesis**: {analysis.get('synthesis', 'N/A')}\n\n"
-            papers_section += f"**Usefulness**: {analysis.get('usefulness', 'N/A')}\n\n"
-            papers_section += f"**Score**: {paper.get('score', 'N/A')}\n\n"
-            if paper.get('url'):
-                papers_section += f"[Read the full paper]({paper.get('url')})\n\n"
+            papers_section += f"**Synthesis**: {analysis['synthesis']}\n\n"
+            papers_section += f"**Usefulness**: {analysis['usefulness']}\n\n"
+            if paper.get("url"):
+                papers_section += f"[Read the full paper]({paper['url']})\n\n"
             papers_section += "---\n\n"
 
-        # Combine all parts
-        newsletter = f"# 🔬 Research Digest: {title}\n\n"
-        newsletter += f"{introduction}\n\n"
-        newsletter += f"{papers_section}\n\n"
-        newsletter += f"## 📈 Conclusion and Trends\n\n"
-        newsletter += f"{conclusion}\n"
-
-        response = self.client.responses.create(
-            model=self.model,
-            input=prompts.newsletter_summary_prompt.format(
-                topic=topic,
-                newsletter=newsletter
-            )
+        newsletter = (
+            f"# 🔬 Research Digest: {parsed.title}\n\n"
+            f"{parsed.introduction}\n\n"
+            f"{papers_section}\n\n"
+            f"## 📈 Conclusion and Trends\n\n"
+            f"{parsed.conclusion}\n"
         )
-        summary = response.output_text
+
+        summary = self.client.responses.create(
+            model=self.model,
+            input=prompts.newsletter_summary_prompt.format(topic=topic, newsletter=newsletter)
+        ).output_text
 
         return {
-            'title': title,
-            'introduction': introduction,
+            'title': parsed.title,
+            'introduction': parsed.introduction,
             'papers_section': papers_section,
-            'conclusion': conclusion,
+            'conclusion': parsed.conclusion,
             'summary': summary,
-            'content_markdown': newsletter
-        }
+            'content_markdown': newsletter,
+        }, papers_with_analysis
 
 
 if __name__ == "__main__":
@@ -302,9 +300,9 @@ if __name__ == "__main__":
     async def main():
         creator = NewsletterCreator()
         result = await creator.create_newsletter(
-            "new llm architectures", "2026-01-06",
-            description="New Large Language Models with novel architecture or new innovations",
-            end_date="2026-01-14", max_papers=10, issue_format='state_of_the_art')
+            "Small language models", "2026-01-06",
+            description="News breakthroughs on small and efficient language models.",
+            end_date="2026-01-14", max_papers=10, issue_format='classic')
         if result and "newsletter" in result:
             print(result["newsletter"]["content_markdown"])
 
